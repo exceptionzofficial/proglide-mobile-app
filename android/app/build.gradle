@@ -117,3 +117,20 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+
+project.ext.vectoricons = [
+    iconFontNames: [ 'MaterialCommunityIcons.ttf' ] // Name of the font files you want to copy
+]
+
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
+// Fix for Gradle task dependency issue with vector icons
+afterEvaluate {
+    tasks.matching { it.name.startsWith("lintVital") }.configureEach {
+        mustRunAfter tasks.named("copyReactNativeVectorIconFonts")
+    }
+    tasks.matching { it.name.contains("generateReleaseLintVitalReportModel") }.configureEach {
+        mustRunAfter tasks.named("copyReactNativeVectorIconFonts")
+    }
+}
