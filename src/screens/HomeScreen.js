@@ -1,118 +1,90 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
+    StyleSheet,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
-    StatusBar,
     FlatList,
-    RefreshControl,
-    Animated,
+    StatusBar,
+    SafeAreaView,
     Dimensions,
-    Easing,
+    ActivityIndicator,
+    ScrollView,
+    Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { getProducts, getCurrentUser } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { getProducts } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
-const CATEGORIES = [
-    { id: 'all', label: 'All', icon: 'view-grid' },
-    { id: 'Screen Guard', label: 'Screen Guard', icon: 'cellphone-screenshot' },
-    { id: 'Phone Case', label: 'Phone Case', icon: 'cellphone-check' },
-    { id: 'Combo/Display', label: 'Combo', icon: 'cellphone-link' },
-    { id: 'CC Board', label: 'CC Board', icon: 'chip' },
-    { id: 'Battery', label: 'Battery', icon: 'battery-charging' },
-    { id: 'Center Panel', label: 'Panel', icon: 'tablet-cellphone' },
+// Updated Category Data with specific descriptions
+const CATEGORIES_DATA = [
+    {
+        id: 'Screen Guard',
+        label: 'Screen Guards',
+        icon: 'cellphone-screenshot',
+        description: 'Stop guessing if a glass fits. We list the exact drawing model and precise corner radius (mm) so you get the perfect edge-to-edge fit every time.'
+    },
+    {
+        id: 'Phone Case',
+        label: 'Phone Cases',
+        icon: 'cellphone-check',
+        description: 'Easily identify which cases fit multiple phones. We group inventory by Base Model so you know exactly which covers are interchangeable.'
+    },
+    {
+        id: 'Combo Folder', // ID matches API category
+        label: 'Combo Folders',
+        icon: 'cellphone-link',
+        description: 'Avoid returns due to wrong versions. Search by specific Brand Name & Model Number to ensure the display connector matches perfectly.'
+    },
+    {
+        id: 'CC Board',
+        label: 'CC Boards',
+        icon: 'chip',
+        description: 'Charging issues solved. We verify Model Numbers to ensure microphone and fast-charging compatibility on every sub-board.'
+    },
+    {
+        id: 'Battery',
+        label: 'Batteries',
+        icon: 'battery-charging',
+        description: 'Don\'t just guess the size. Match the Model Code (e.g., BN-50) to the device to guarantee proper fitting and battery health.'
+    },
+    {
+        id: 'Center Panel',
+        label: 'Center Panels',
+        icon: 'tablet-cellphone',
+        description: 'Structural body replacements that align with the Base Model chassis for a seamless, factory-finish repair.'
+    }
 ];
 
-// Skeleton Loader Component
-const SkeletonCard = ({ theme }) => {
-    const opacity = useRef(new Animated.Value(0.3)).current;
-    const { colors, isDark } = theme;
-
-    useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(opacity, {
-                    toValue: 1,
-                    duration: 1000,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(opacity, {
-                    toValue: 0.3,
-                    duration: 1000,
-                    useNativeDriver: true,
-                }),
-            ]),
-        ).start();
-    }, [opacity]);
-
-    const skeletonColor = isDark ? '#374151' : '#E5E7EB';
-
-    return (
-        <View style={[styles.skeletonCard, { backgroundColor: colors.card }]}>
-            <Animated.View style={[styles.skeletonBadge, { opacity, backgroundColor: skeletonColor }]} />
-            <Animated.View style={[styles.skeletonText, { width: '80%', opacity, backgroundColor: skeletonColor }]} />
-            <Animated.View style={[styles.skeletonText, { width: '60%', marginTop: 8, opacity, backgroundColor: skeletonColor }]} />
-            <Animated.View style={[styles.skeletonButton, { opacity, backgroundColor: skeletonColor }]} />
-        </View>
-    );
-};
+// Tabs list including 'All'
+const TABS = [
+    { id: 'All', label: 'All' },
+    ...CATEGORIES_DATA.map(c => ({ id: c.id, label: c.label }))
+];
 
 const HomeScreen = ({ navigation }) => {
-    const [products, setProducts] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [user, setUser] = useState(null);
-
-    const { theme, isDark } = useTheme();
+    const { theme } = useTheme();
     const { colors } = theme;
 
-    // Animation Values
-    const headerTranslateY = useRef(new Animated.Value(-100)).current;
-    const contentOpacity = useRef(new Animated.Value(0)).current;
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedDevice, setSelectedDevice] = useState(null);
+    const [activeTab, setActiveTab] = useState('All');
+
+    const [products, setProducts] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadUser();
         fetchProducts();
-        animateEntry();
     }, []);
-
-    useEffect(() => {
-        filterProducts();
-    }, [products, selectedCategory, searchQuery]);
-
-    const animateEntry = () => {
-        Animated.parallel([
-            Animated.timing(headerTranslateY, {
-                toValue: 0,
-                duration: 800,
-                easing: Easing.out(Easing.cubic),
-                useNativeDriver: true,
-            }),
-            Animated.timing(contentOpacity, {
-                toValue: 1,
-                duration: 1000,
-                delay: 300,
-                useNativeDriver: true,
-            }),
-        ]).start();
-    };
-
-    const loadUser = async () => {
-        const userData = await getCurrentUser();
-        setUser(userData);
-    };
 
     const fetchProducts = async () => {
         try {
-            if (!refreshing) setLoading(true);
+            setLoading(true);
             const data = await getProducts();
             setProducts(data);
         } catch (error) {
@@ -122,410 +94,631 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-        await fetchProducts();
-        setRefreshing(false);
-    }, []);
+    const handleSearch = (text) => {
+        setSearchQuery(text);
+        if (text.trim().length > 0) {
+            // Extract ALL compatible devices that match the search query
+            const allDevices = products.flatMap(p =>
+                p.compatibleDevices ? p.compatibleDevices.split(',').map(d => d.trim()) : []
+            );
 
-    const filterProducts = () => {
-        let filtered = products;
-        if (selectedCategory !== 'all') {
-            filtered = filtered.filter(p => p.category === selectedCategory);
+            const uniqueMatchingDevices = [...new Set(allDevices
+                .filter(d => d.toLowerCase().includes(text.toLowerCase()))
+            )];
+
+            setSuggestions(uniqueMatchingDevices.slice(0, 10));
+            setShowSuggestions(true);
+        } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            if (text.trim().length === 0) {
+                setSelectedDevice(null); // Clear selection if search is cleared
+            }
         }
-        if (searchQuery.trim()) {
-            filtered = filtered.filter(p =>
-                p.compatibleDevices?.toLowerCase().includes(searchQuery.toLowerCase()),
+    };
+
+    const handleSelectDevice = (device) => {
+        setSearchQuery(device);
+        setSelectedDevice(device);
+        setShowSuggestions(false);
+    };
+
+    const sendFeedback = () => {
+        Linking.openURL('mailto:proglideapp@gmail.com?subject=App Feedback');
+    };
+
+    const renderHeader = () => (
+        <View style={[styles.headerContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
+                <Icon name="magnify" size={24} color={colors.textSecondary} />
+                <TextInput
+                    style={[styles.searchInput, { color: colors.text, fontFamily: 'serif' }]}
+                    placeholder="Search Device (e.g. Vivo V19)"
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                />
+                {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => { setSearchQuery(''); setSelectedDevice(null); }}>
+                        <Icon name="close" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            <FlatList
+                data={TABS}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={item => item.id}
+                contentContainerStyle={styles.tabsContainer}
+                renderItem={({ item }) => (
+                    <TouchableOpacity
+                        style={[
+                            styles.tab,
+                            activeTab === item.id && { backgroundColor: colors.primary, borderColor: colors.primary }
+                        ]}
+                        onPress={() => setActiveTab(item.id)}
+                    >
+                        <Text style={[
+                            styles.tabText,
+                            { color: activeTab === item.id ? '#FFFFFF' : colors.text, fontFamily: 'serif' }
+                        ]}>
+                            {item.label}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            />
+        </View>
+    );
+
+    const renderSuggestions = () => (
+        <View style={[styles.suggestionsContainer, { backgroundColor: colors.card }]}>
+            <FlatList
+                data={suggestions}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                    <TouchableOpacity
+                        style={[styles.suggestionItem, { borderBottomColor: colors.border }]}
+                        onPress={() => handleSelectDevice(item)}
+                    >
+                        <Icon name="history" size={20} color={colors.textSecondary} style={{ marginRight: 12 }} />
+                        <Text style={{ color: colors.text, fontSize: 16, fontFamily: 'serif' }}>{item}</Text>
+                    </TouchableOpacity>
+                )}
+            />
+        </View>
+    );
+
+    const renderCategoryBox = (item) => (
+        <TouchableOpacity
+            key={item.id}
+            style={[styles.categoryBox, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setActiveTab(item.id)}
+        >
+            <View style={styles.catHeader}>
+                <Icon name={item.icon} size={32} color={colors.primary} />
+                <Text style={[styles.catTitle, { color: colors.text, fontFamily: 'serif' }]}>{item.label}</Text>
+            </View>
+            <Text style={[styles.catDesc, { color: colors.textSecondary, fontFamily: 'serif' }]}>
+                {item.description}
+            </Text>
+        </TouchableOpacity>
+    );
+
+    const renderContent = () => {
+        if (loading) {
+            return (
+                <View style={styles.emptyState}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={{ marginTop: 16, color: colors.textSecondary, fontFamily: 'serif' }}>Loading...</Text>
+                </View>
             );
         }
-        setFilteredProducts(filtered);
-    };
 
-    const getIconForCategory = category => {
-        const cat = CATEGORIES.find(c => c.id === category);
-        return cat?.icon || 'package-variant';
-    };
+        // 1. "All" Tab Logic
+        if (activeTab === 'All') {
+            // Filter products based on search query to show tags
+            let displayedDevices = [];
+            const isSearching = searchQuery.trim().length > 0;
 
-    const renderProduct = ({ item, index }) => {
-        const translateY = new Animated.Value(50);
-        const opacity = new Animated.Value(0);
+            if (isSearching) {
+                // Get all devices from all products
+                const allDevices = products.flatMap(p =>
+                    p.compatibleDevices ? p.compatibleDevices.split(',').map(d => d.trim()) : []
+                );
+                // Filter by search query and unique
+                displayedDevices = [...new Set(allDevices
+                    .filter(d => d.toLowerCase().includes(searchQuery.toLowerCase()))
+                )];
+            }
 
-        Animated.parallel([
-            Animated.timing(translateY, {
-                toValue: 0,
-                duration: 500,
-                delay: index * 50,
-                useNativeDriver: true,
-            }),
-            Animated.timing(opacity, {
-                toValue: 1,
-                duration: 500,
-                delay: index * 50,
-                useNativeDriver: true,
-            }),
-        ]).start();
+            return (
+                <ScrollView contentContainerStyle={{ padding: 16 }}>
+                    {/* Show Search Results as Tags in "All" Tab */}
+                    {isSearching && displayedDevices.length > 0 && (
+                        <View style={[styles.section, { backgroundColor: colors.card }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'serif' }]}>
+                                Search Results
+                            </Text>
+                            <View style={styles.tagContainer}>
+                                {displayedDevices.map(device => {
+                                    const isSelected = selectedDevice === device;
+                                    return (
+                                        <TouchableOpacity
+                                            key={device}
+                                            style={[
+                                                styles.tag,
+                                                {
+                                                    backgroundColor: isSelected ? colors.primary : '#F3F4F6',
+                                                    borderColor: isSelected ? colors.primary : '#F3F4F6'
+                                                }
+                                            ]}
+                                            onPress={() => handleSelectDevice(device)}
+                                        >
+                                            <Text style={[
+                                                styles.tagText,
+                                                {
+                                                    color: isSelected ? '#FFFFFF' : colors.text,
+                                                    fontFamily: 'serif'
+                                                }
+                                            ]}>
+                                                {device}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Show "No Results" if searching but no matches */}
+                    {isSearching && displayedDevices.length === 0 && (
+                        <View style={styles.emptyState}>
+                            <Icon name="magnify-remove-outline" size={48} color={colors.textSecondary} />
+                            <Text style={{ marginTop: 16, color: colors.textSecondary, fontFamily: 'serif' }}>
+                                No devices found matching "{searchQuery}"
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Only show Category Boxes when NOT searching */}
+                    {!isSearching && (
+                        <View style={styles.gridContainer}>
+                            {CATEGORIES_DATA.map(renderCategoryBox)}
+                        </View>
+                    )}
+
+                    {/* Feedback Form */}
+                    <View style={[styles.feedbackSection, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.feedbackTitle, { color: colors.text, fontFamily: 'serif' }]}>Have Feedback?</Text>
+                        <Text style={[styles.feedbackSubtitle, { color: colors.textSecondary, fontFamily: 'serif' }]}>
+                            We'd love to hear from you. Let us know how we can improve.
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.feedbackButton, { backgroundColor: colors.primary }]}
+                            onPress={sendFeedback}
+                        >
+                            <Text style={[styles.feedbackButtonText, { fontFamily: 'serif' }]}>Send Feedback</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            );
+        }
+
+        // 2. Specific Category Tab Logic
+        if (!selectedDevice) {
+            return (
+                <View style={styles.emptyState}>
+                    <Icon name="magnify" size={64} color={colors.textSecondary} />
+                    <Text style={[styles.emptyText, { color: colors.textSecondary, fontFamily: 'serif' }]}>
+                        Search for a device to see details
+                    </Text>
+                </View>
+            );
+        }
+
+        // Device IS selected -> Show Contextual Details
+        // Find matching product(s)
+        const matchingProduct = products.find(p =>
+            p.category === activeTab &&
+            p.compatibleDevices?.toLowerCase().includes(selectedDevice.toLowerCase())
+        );
+
+        // Even if no exact match found in this category, we pass a dummy to search for similar/perfect matches
+        // logic is handled inside EmbeddedProductDetails
+        const productToPass = matchingProduct || {
+            category: activeTab,
+            compatibleDevices: selectedDevice,
+            specs: {},
+            _id: 'dummy'
+        };
 
         return (
-            <Animated.View
-                style={[
-                    styles.productCardWrapper,
-                    { opacity, transform: [{ translateY }] },
-                ]}>
-                <TouchableOpacity
-                    style={[styles.productCard, { backgroundColor: colors.card }]}
-                    activeOpacity={0.9}
-                    onPress={() => navigation.navigate('ProductDetails', { product: item })}>
-
-                    <View style={styles.cardHeader}>
-                        <View style={[styles.categoryBadge, { backgroundColor: isDark ? 'rgba(157, 71, 10, 0.2)' : '#FFF7ED' }]}>
-                            <Icon
-                                name={getIconForCategory(item.category)}
-                                size={14}
-                                color={colors.primary}
-                            />
-                            <Text style={[styles.categoryBadgeText, { color: colors.primary }]}>{item.category}</Text>
-                        </View>
-                        <Icon name="chevron-right" size={20} color={colors.icon} />
-                    </View>
-
-                    <Text style={[styles.productDevices, { color: colors.text }]} numberOfLines={2}>
-                        {item.compatibleDevices || 'Unknown Device'}
-                    </Text>
-
-                    <View style={styles.specsContainer}>
-                        {item.specs?.modelNo && (
-                            <Text style={[styles.specText, { color: colors.textSecondary }]}>Model: {item.specs.modelNo}</Text>
-                        )}
-                        {item.specs?.height && item.specs?.width && (
-                            <Text style={[styles.specText, { color: colors.textSecondary }]}>
-                                {item.specs.height} x {item.specs.width} mm
-                            </Text>
-                        )}
-                    </View>
-
-                    <View style={[styles.viewDetailsButton, { backgroundColor: isDark ? colors.background : '#F3F4F6' }]}>
-                        <Text style={[styles.viewDetailsText, { color: colors.primary }]}>View Details</Text>
-                    </View>
-                </TouchableOpacity>
-            </Animated.View>
+            <EmbeddedProductDetails
+                product={productToPass}
+                targetDevice={selectedDevice}
+                theme={theme}
+                onDeviceSelect={handleSelectDevice}
+            />
         );
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <StatusBar
-                barStyle="light-content"
-                backgroundColor={colors.statusBarBg}
-            />
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle="dark-content" backgroundColor={colors.card} />
 
-            {/* Animated Header */}
-            <Animated.View
-                style={[
-                    styles.header,
-                    {
-                        backgroundColor: isDark ? colors.card : colors.primary,
-                        transform: [{ translateY: headerTranslateY }]
-                    },
-                ]}>
-                <View style={styles.headerTop}>
-                    <View>
-                        <Text style={styles.headerGreeting}>Welcome back,</Text>
-                        <Text style={styles.headerName}>{user?.name || 'Guest'}</Text>
-                    </View>
-                    <View style={styles.headerIconContainer}>
-                        <Icon name="bell-outline" size={24} color="#FFFFFF" />
-                    </View>
+            {renderHeader()}
+
+            {showSuggestions ? renderSuggestions() : (
+                <View style={styles.contentContainer}>
+                    {renderContent()}
                 </View>
+            )}
+        </SafeAreaView>
+    );
+};
 
-                {/* Search Bar */}
-                <View style={[styles.searchContainer, { backgroundColor: isDark ? colors.inputBg : '#FFFFFF' }]}>
-                    <Icon name="magnify" size={22} color={colors.placeholder} style={styles.searchIcon} />
-                    <TextInput
-                        style={[styles.searchInput, { color: colors.text }]}
-                        placeholder="Search devices..."
-                        placeholderTextColor={colors.placeholder}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                    {searchQuery ? (
-                        <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <Icon name="close-circle" size={20} color={colors.icon} />
-                        </TouchableOpacity>
-                    ) : null}
-                </View>
-            </Animated.View>
+// Component to render details inside the tab
+const EmbeddedProductDetails = ({ product, targetDevice, theme, onDeviceSelect }) => {
+    const { colors } = theme;
+    const [matches, setMatches] = useState({ original: [], fullTemper: [], similar: [], perfect: [] });
+    const [calculating, setCalculating] = useState(true);
 
-            {/* Main Content */}
-            <Animated.View style={[styles.content, { opacity: contentOpacity }]}>
-                {/* Categories */}
-                <View style={styles.categoriesWrapper}>
-                    <FlatList
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        data={CATEGORIES}
-                        keyExtractor={item => item.id}
-                        contentContainerStyle={styles.categoriesList}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                style={[
-                                    styles.categoryChip,
-                                    {
-                                        backgroundColor: selectedCategory === item.id ? colors.primary : colors.card,
-                                        borderColor: isDark ? colors.border : '#E5E7EB'
-                                    }
-                                ]}
-                                onPress={() => setSelectedCategory(item.id)}>
-                                <Icon
-                                    name={item.icon}
-                                    size={18}
-                                    color={selectedCategory === item.id ? '#FFFFFF' : colors.textSecondary}
-                                />
-                                <Text
-                                    style={[
-                                        styles.categoryChipText,
-                                        { color: selectedCategory === item.id ? '#FFFFFF' : colors.textSecondary }
-                                    ]}>
-                                    {item.label}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                </View>
+    useEffect(() => {
+        let isMounted = true;
+        setCalculating(true);
 
-                {/* Product Grid */}
-                {loading ? (
-                    <View style={styles.skeletonContainer}>
-                        {[1, 2, 3, 4, 5, 6].map(key => (
-                            <SkeletonCard key={key} theme={{ colors, isDark }} />
-                        ))}
-                    </View>
-                ) : (
-                    <FlatList
-                        data={filteredProducts}
-                        renderItem={renderProduct}
-                        keyExtractor={item => item._id}
-                        numColumns={2}
-                        contentContainerStyle={styles.productsList}
-                        columnWrapperStyle={styles.productsRow}
-                        showsVerticalScrollIndicator={false}
-                        refreshControl={
-                            <RefreshControl
-                                refreshing={refreshing}
-                                onRefresh={onRefresh}
-                                colors={[colors.primary]}
-                                tintColor={colors.primary}
-                            />
+        getProducts().then(data => {
+            if (isMounted) {
+                calculateMatches(data);
+                setCalculating(false);
+            }
+        });
+
+        return () => { isMounted = false; };
+    }, [product, targetDevice]);
+    const calculateMatches = (allProducts) => {
+        const { category, specs } = product;
+        const targetHeight = parseFloat(specs?.height || 0);
+        const targetWidth = parseFloat(specs?.width || 0);
+        const targetRadius = parseFloat(specs?.radiusTopLeft || specs?.radius || 0);
+
+        const newMatches = { original: [], fullTemper: [], similar: [], perfect: [] };
+        const categoryProducts = allProducts.filter(p => p.category === category);
+
+        if (category === 'Screen Guard') {
+            if (product._id !== 'dummy' && product.compatibleDevices) {
+                // ORIGINAL DRAWING: Only show the device that matches the search (targetDevice)
+                const devices = product.compatibleDevices.split(',').map(d => d.trim());
+                const matchedDevice = devices.find(d => d.toLowerCase() === targetDevice.toLowerCase());
+
+                if (matchedDevice) {
+                    newMatches.original = [matchedDevice];
+                } else if (product.baseModel?.toLowerCase() === targetDevice.toLowerCase()) {
+                    newMatches.original = [product.baseModel];
+                }
+            }
+
+            categoryProducts.forEach(p => {
+                const pHeight = parseFloat(p.specs?.height || 0);
+                const pWidth = parseFloat(p.specs?.width || 0);
+                const pRadius = parseFloat(p.specs?.radiusTopLeft || p.specs?.radius || 0);
+
+                // Full Temper Logic: Height, Width, AND Radius must be same (approx)
+                if (Math.abs(pHeight - targetHeight) < 0.1 &&
+                    Math.abs(pWidth - targetWidth) < 0.1 &&
+                    Math.abs(pRadius - targetRadius) < 0.1) {
+
+                    if (p._id !== product._id && p.compatibleDevices) {
+                        const devices = p.compatibleDevices.split(',').map(d => d.trim());
+                        newMatches.fullTemper.push(...devices);
+                    }
+                }
+
+                // Similar Match Logic: 0.5mm LESS than full temper (target)
+                const widthDiff = targetWidth - pWidth;
+                if (widthDiff >= 0.01 && widthDiff <= 0.5) {
+                    if (Math.abs(pHeight - targetHeight) < 1.0) {
+                        if (p.compatibleDevices) {
+                            const devices = p.compatibleDevices.split(',').map(d => d.trim());
+                            newMatches.similar.push(...devices);
                         }
-                        ListEmptyComponent={
-                            <View style={styles.emptyContainer}>
-                                <Icon name="package-variant-closed" size={64} color={colors.icon} />
-                                <Text style={[styles.emptyTitle, { color: colors.text }]}>No Items Found</Text>
-                                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                                    Try changing your search or category
-                                </Text>
+                    }
+                }
+            });
+            // Deduplicate
+            newMatches.fullTemper = [...new Set(newMatches.fullTemper)];
+            newMatches.similar = [...new Set(newMatches.similar)];
+
+        } else {
+            // Perfect Match Logic for other categories
+            const perfectMatches = categoryProducts.filter(p =>
+                p.compatibleDevices?.toLowerCase().includes(targetDevice.toLowerCase())
+            );
+
+            const allDevices = perfectMatches.flatMap(p =>
+                p.compatibleDevices ? p.compatibleDevices.split(',').map(d => d.trim()) : []
+            );
+
+            const matched = allDevices.filter(d => d.toLowerCase() === targetDevice.toLowerCase());
+            newMatches.perfect = [...new Set(matched.length > 0 ? matched : allDevices)];
+        }
+        setMatches(newMatches);
+    };
+
+    const renderTag = (label, colorBg, colorText) => {
+        // Highlight if the tag matches the targetDevice (which is the search query)
+        const isSelected = label.toLowerCase() === targetDevice.toLowerCase();
+
+        const finalBg = isSelected ? colors.primary : colorBg;
+        const finalText = isSelected ? '#FFFFFF' : colorText;
+
+        return (
+            <TouchableOpacity
+                key={label + Math.random()}
+                style={[styles.tag, { backgroundColor: finalBg, borderColor: finalBg }]}
+                onPress={() => onDeviceSelect(label)}
+            >
+                <Text style={[styles.tagText, { color: finalText, fontFamily: 'serif' }]}>{label}</Text>
+            </TouchableOpacity>
+        );
+    };
+
+    if (calculating) {
+        return (
+            <View style={styles.emptyState}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={{ marginTop: 16, color: colors.textSecondary, fontFamily: 'serif' }}>Finding matches...</Text>
+            </View>
+        );
+    }
+
+    const hasAnyMatches = matches.original.length > 0 || matches.fullTemper.length > 0 || matches.similar.length > 0 || matches.perfect.length > 0;
+
+    if (!hasAnyMatches) {
+        return (
+            <View style={styles.emptyState}>
+                <Icon name="alert-circle-outline" size={48} color={colors.textSecondary} />
+                <Text style={{ marginTop: 16, color: colors.textSecondary, fontFamily: 'serif' }}>No matching products found for {targetDevice}</Text>
+            </View>
+        );
+    }
+
+    return (
+        <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <View style={[styles.titleCard, { backgroundColor: colors.card }]}>
+                <Text style={[styles.categoryTag, { color: colors.primary, fontFamily: 'serif' }]}>{product.category}</Text>
+                <Text style={[styles.productTitle, { color: colors.text, fontFamily: 'serif' }]}>{targetDevice}</Text>
+            </View>
+
+            {product.category === 'Screen Guard' ? (
+                <View>
+                    {matches.original.length > 0 && (
+                        <View style={[styles.section, { backgroundColor: colors.card }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'serif' }]}>Original Drawing</Text>
+                            <View style={styles.tagContainer}>
+                                {matches.original.map(d => renderTag(d, '#166534', '#FFFFFF'))}
                             </View>
+                        </View>
+                    )}
+                    {matches.fullTemper.length > 0 && (
+                        <View style={[styles.section, { backgroundColor: colors.card }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'serif' }]}>Full Temper</Text>
+                            <View style={styles.tagContainer}>
+                                {matches.fullTemper.map(d => renderTag(d, '#DCFCE7', '#166534'))}
+                            </View>
+                        </View>
+                    )}
+                    {matches.similar.length > 0 && (
+                        <View style={[styles.section, { backgroundColor: colors.card }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'serif' }]}>Similar Match</Text>
+                            <View style={styles.tagContainer}>
+                                {matches.similar.map(d => renderTag(d, '#FEE2E2', '#991B1B'))}
+                            </View>
+                        </View>
+                    )}
+                </View>
+            ) : (
+                <View style={[styles.section, { backgroundColor: colors.card }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'serif' }]}>Compatible Devices</Text>
+                    <View style={styles.tagContainer}>
+                        {matches.perfect.length > 0 ?
+                            matches.perfect.map(d => renderTag(d, '#F3F4F6', colors.text)) :
+                            <Text style={{ color: colors.textSecondary, fontFamily: 'serif' }}>No exact match found for {targetDevice} in {product.category}</Text>
                         }
-                    />
-                )}
-            </Animated.View>
-        </View>
+                    </View>
+                </View>
+            )}
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        paddingTop: StatusBar.currentHeight || 0,
     },
-    header: {
-        paddingTop: 20,
-        paddingBottom: 24,
-        paddingHorizontal: 20,
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        zIndex: 10,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-    },
-    headerTop: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    headerGreeting: {
-        fontSize: 14,
-        color: 'rgba(255,255,255,0.8)',
-        fontWeight: '500',
-    },
-    headerName: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-    },
-    headerIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        alignItems: 'center',
-        justifyContent: 'center',
+    headerContainer: {
+        paddingVertical: 8,
+        elevation: 4,
+        zIndex: 100,
     },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        height: 50,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 4,
-    },
-    searchIcon: {
-        marginRight: 10,
+        marginHorizontal: 16,
+        marginBottom: 8,
+        paddingHorizontal: 12,
+        height: 48,
+        borderRadius: 0,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
     searchInput: {
         flex: 1,
+        marginLeft: 8,
         fontSize: 16,
     },
-    content: {
-        flex: 1,
-    },
-    categoriesWrapper: {
-        paddingVertical: 16,
-    },
-    categoriesList: {
-        paddingHorizontal: 20,
-    },
-    categoryChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    tabsContainer: {
         paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 25,
-        marginRight: 10,
-        borderWidth: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
+        paddingBottom: 8,
     },
-    categoryChipText: {
-        fontSize: 14,
-        marginLeft: 6,
+    tab: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginRight: 8,
+        borderRadius: 0,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        backgroundColor: '#FFFFFF',
+    },
+    tabText: {
         fontWeight: '600',
     },
-    productsList: {
-        paddingHorizontal: 14,
-        paddingBottom: 20,
+    suggestionsContainer: {
+        position: 'absolute',
+        top: 110,
+        left: 0,
+        right: 0,
+        zIndex: 200,
+        elevation: 5,
+        maxHeight: 300,
     },
-    productsRow: {
-        justifyContent: 'space-between',
-    },
-    productCardWrapper: {
-        width: (width - 40) / 2,
-        marginBottom: 12,
-    },
-    productCard: {
-        borderRadius: 16,
-        padding: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 3,
-        height: 180,
-        justifyContent: 'space-between',
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 8,
-    },
-    categoryBadge: {
+    suggestionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
+        padding: 16,
+        borderBottomWidth: 1,
     },
-    categoryBadgeText: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        marginLeft: 4,
+    contentContainer: {
+        flex: 1,
     },
-    productDevices: {
-        fontSize: 15,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        lineHeight: 20,
-    },
-    specsContainer: {
-        marginBottom: 8,
-    },
-    specText: {
-        fontSize: 11,
-        marginBottom: 2,
-    },
-    viewDetailsButton: {
-        paddingVertical: 8,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    viewDetailsText: {
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    // Skeleton Styles
-    skeletonContainer: {
+    gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        paddingHorizontal: 14,
+        marginBottom: 20,
     },
-    skeletonCard: {
-        width: (width - 40) / 2,
-        height: 180,
-        borderRadius: 16,
+    categoryBox: {
+        width: '48%',
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderRadius: 0,
+    },
+    catHeader: {
+        marginBottom: 8,
+    },
+    catTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 8,
+    },
+    catDesc: {
+        fontSize: 12,
+        lineHeight: 16,
+    },
+    selectedDeviceCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderWidth: 1,
+        borderRadius: 0,
+        marginBottom: 20,
+    },
+    selectedDeviceTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    feedbackSection: {
+        padding: 24,
+        alignItems: 'center',
+        borderRadius: 0,
+        marginTop: 10,
+    },
+    feedbackTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 8,
+    },
+    feedbackSubtitle: {
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    feedbackButton: {
+        paddingHorizontal: 32,
+        paddingVertical: 12,
+        borderRadius: 0,
+    },
+    feedbackButtonText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+    },
+    emptyState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    emptyText: {
+        fontSize: 18,
+        marginTop: 16,
+        marginBottom: 24,
+    },
+    feedbackButton: {
         padding: 12,
-        marginBottom: 12,
+    },
+    resultCard: {
+        padding: 24,
+        alignItems: 'center',
+        borderRadius: 0,
         elevation: 2,
     },
-    skeletonBadge: {
-        width: 60,
-        height: 20,
-        borderRadius: 8,
-        marginBottom: 12,
-    },
-    skeletonText: {
-        height: 12,
-        borderRadius: 6,
-        marginBottom: 6,
-    },
-    skeletonButton: {
-        height: 30,
-        borderRadius: 8,
-        marginTop: 'auto',
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 60,
-    },
-    emptyTitle: {
-        fontSize: 18,
+    resultTitle: {
+        fontSize: 24,
         fontWeight: 'bold',
         marginTop: 16,
     },
-    emptySubtitle: {
+    titleCard: {
+        padding: 16,
+        marginBottom: 16,
+        alignItems: 'center',
+        elevation: 1,
+    },
+    categoryTag: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+    },
+    productTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    section: {
+        padding: 16,
+        marginBottom: 16,
+        elevation: 1,
+        borderRadius: 0,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 12,
+    },
+    tagContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    tag: {
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        marginRight: 8,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderRadius: 0,
+    },
+    tagText: {
         fontSize: 14,
-        marginTop: 8,
     },
 });
 
