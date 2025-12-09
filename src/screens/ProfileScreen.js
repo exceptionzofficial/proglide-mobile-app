@@ -5,10 +5,9 @@ import {
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    Image,
     Alert,
     StatusBar,
-    Switch,
+    SafeAreaView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,7 +15,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const ProfileScreen = ({ navigation }) => {
     const [user, setUser] = useState(null);
-    const { theme, isDark, toggleTheme } = useTheme();
+    const { theme, isDark } = useTheme();
     const { colors } = theme;
 
     useEffect(() => {
@@ -52,40 +51,40 @@ const ProfileScreen = ({ navigation }) => {
         ]);
     };
 
-    const MenuItem = ({ icon, title, subtitle, onPress, color, rightElement }) => (
+    const MenuItem = ({ icon, title, subtitle, onPress }) => (
         <TouchableOpacity
-            style={[styles.menuItem, { borderBottomColor: colors.background }]}
+            style={[styles.menuItem, { backgroundColor: colors.card }]}
             onPress={onPress}
-            disabled={!!rightElement}>
-            <View style={[styles.iconContainer, { backgroundColor: isDark ? colors.background : '#F3F4F6' }]}>
+            activeOpacity={0.7}>
+            <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
                 <Icon name={icon} size={24} color={colors.primary} />
             </View>
             <View style={styles.menuTextContainer}>
-                <Text style={[styles.menuTitle, { color: color || colors.text }]}>{title}</Text>
+                <Text style={[styles.menuTitle, { color: colors.text }]}>{title}</Text>
                 {subtitle && <Text style={[styles.menuSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
             </View>
-            {rightElement ? rightElement : (
-                <Icon name="chevron-right" size={24} color={colors.icon} />
-            )}
+            <Icon name="chevron-right" size={24} color={colors.icon} />
         </TouchableOpacity>
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar
-                barStyle={isDark ? 'light-content' : 'light-content'}
-                backgroundColor={colors.statusBarBg}
+                barStyle="light-content"
+                backgroundColor={colors.primary}
             />
 
             {/* Header Section */}
-            <View style={[styles.header, { backgroundColor: isDark ? colors.card : colors.primary }]}>
+            <View style={[styles.header, { backgroundColor: colors.primary }]}>
+                <Text style={styles.headerTitle}>Profile</Text>
+
                 <View style={styles.profileInfo}>
-                    <View style={[styles.avatarContainer, { borderColor: isDark ? colors.border : 'rgba(255,255,255,0.3)' }]}>
+                    <View style={styles.avatarContainer}>
                         <Text style={[styles.avatarText, { color: colors.primary }]}>
                             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </Text>
                     </View>
-                    <View>
+                    <View style={styles.userInfo}>
                         <Text style={styles.userName}>{user?.name || 'User Name'}</Text>
                         <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
                         <View style={styles.shopBadge}>
@@ -94,73 +93,56 @@ const ProfileScreen = ({ navigation }) => {
                         </View>
                     </View>
                 </View>
+
+                {user?.phone && (
+                    <View style={styles.phoneContainer}>
+                        <Icon name="phone" size={16} color="rgba(255,255,255,0.8)" />
+                        <Text style={styles.phoneText}>{user.phone}</Text>
+                    </View>
+                )}
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Appearance Settings */}
-                <View style={[styles.section, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
-                    <MenuItem
-                        icon="theme-light-dark"
-                        title="Dark Mode"
-                        subtitle={isDark ? "On" : "Off"}
-                        rightElement={
-                            <Switch
-                                trackColor={{ false: '#767577', true: colors.primary }}
-                                thumbColor={isDark ? '#FFFFFF' : '#f4f3f4'}
-                                ios_backgroundColor="#3e3e3e"
-                                onValueChange={toggleTheme}
-                                value={isDark}
-                            />
-                        }
-                    />
+                {/* App Information Section */}
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>APP INFORMATION</Text>
+
+                <MenuItem
+                    icon="help-circle-outline"
+                    title="How to Use"
+                    subtitle="Learn how to use ProGlide"
+                    onPress={() => navigation.navigate('HowToUse')}
+                />
+
+                <MenuItem
+                    icon="file-document-outline"
+                    title="Terms & Conditions"
+                    subtitle="Read our terms of service"
+                    onPress={() => navigation.navigate('Terms')}
+                />
+
+                <MenuItem
+                    icon="shield-lock-outline"
+                    title="Privacy Policy"
+                    subtitle="How we protect your data"
+                    onPress={() => navigation.navigate('PrivacyPolicy')}
+                />
+
+                {/* About Section */}
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary, marginTop: 20 }]}>ABOUT</Text>
+
+                <View style={[styles.aboutCard, { backgroundColor: colors.card }]}>
+                    <View style={styles.aboutRow}>
+                        <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>App Version</Text>
+                        <Text style={[styles.aboutValue, { color: colors.text }]}>1.0.0</Text>
+                    </View>
+                    <View style={[styles.divider, { backgroundColor: colors.background }]} />
+                    <View style={styles.aboutRow}>
+                        <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>Contact</Text>
+                        <Text style={[styles.aboutValue, { color: colors.primary }]}>proglideapp@gmail.com</Text>
+                    </View>
                 </View>
 
-                {/* Account Settings */}
-                <View style={[styles.section, { backgroundColor: colors.card }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Account Settings</Text>
-                    <MenuItem
-                        icon="account-edit-outline"
-                        title="Edit Profile"
-                        subtitle="Update your personal information"
-                        onPress={() => { }}
-                    />
-                    <MenuItem
-                        icon="lock-outline"
-                        title="Change Password"
-                        subtitle="Reset your security credentials"
-                        onPress={() => { }}
-                    />
-                    <MenuItem
-                        icon="bell-outline"
-                        title="Notifications"
-                        subtitle="Manage app alerts"
-                        onPress={() => { }}
-                    />
-                </View>
-
-                {/* App Settings */}
-                <View style={[styles.section, { backgroundColor: colors.card }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>App Support</Text>
-                    <MenuItem
-                        icon="help-circle-outline"
-                        title="Help & Support"
-                        onPress={() => { }}
-                    />
-                    <MenuItem
-                        icon="file-document-outline"
-                        title="Terms & Conditions"
-                        onPress={() => { }}
-                    />
-                    <MenuItem
-                        icon="information-outline"
-                        title="About ProGlide"
-                        subtitle="Version 1.0.0"
-                        onPress={() => { }}
-                    />
-                </View>
-
-                {/* Logout */}
+                {/* Logout Button */}
                 <TouchableOpacity
                     style={[styles.logoutButton, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2' }]}
                     onPress={handleLogout}>
@@ -169,10 +151,15 @@ const ProfileScreen = ({ navigation }) => {
                 </TouchableOpacity>
 
                 <View style={styles.footer}>
-                    <Text style={[styles.footerText, { color: colors.textSecondary }]}>ProGlide Mobile v1.0.0</Text>
+                    <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+                        Made with ❤️ for mobile retailers
+                    </Text>
+                    <Text style={[styles.footerText, { color: colors.textSecondary, marginTop: 4 }]}>
+                        ProGlide © 2024
+                    </Text>
                 </View>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -181,16 +168,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        paddingTop: 20,
-        paddingBottom: 30,
+        paddingTop: 16,
+        paddingBottom: 24,
         paddingHorizontal: 20,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 5,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+        marginBottom: 20,
     },
     profileInfo: {
         flexDirection: 'row',
@@ -199,19 +185,20 @@ const styles = StyleSheet.create({
     avatarContainer: {
         width: 70,
         height: 70,
-        borderRadius: 35,
         backgroundColor: '#FFFFFF',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 16,
-        borderWidth: 3,
     },
     avatarText: {
         fontSize: 28,
         fontWeight: 'bold',
     },
+    userInfo: {
+        flex: 1,
+    },
     userName: {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: 'bold',
         color: '#FFFFFF',
     },
@@ -224,9 +211,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(255,255,255,0.2)',
-        paddingHorizontal: 8,
+        paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 12,
         alignSelf: 'flex-start',
     },
     shopName: {
@@ -235,58 +221,81 @@ const styles = StyleSheet.create({
         marginLeft: 4,
         fontWeight: '600',
     },
+    phoneContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 12,
+        paddingLeft: 86,
+    },
+    phoneText: {
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 14,
+        marginLeft: 8,
+    },
     content: {
         flex: 1,
-        padding: 20,
-    },
-    section: {
-        borderRadius: 16,
         padding: 16,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
     },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 16,
+    sectionLabel: {
+        fontSize: 12,
+        fontWeight: '700',
+        letterSpacing: 1,
+        marginBottom: 12,
         marginLeft: 4,
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
+        padding: 16,
+        marginBottom: 10,
+        elevation: 1,
     },
     iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 16,
+        marginRight: 14,
     },
     menuTextContainer: {
         flex: 1,
     },
     menuTitle: {
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: '600',
     },
     menuSubtitle: {
         fontSize: 12,
         marginTop: 2,
+    },
+    aboutCard: {
+        padding: 16,
+        marginBottom: 20,
+        elevation: 1,
+    },
+    aboutRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    aboutLabel: {
+        fontSize: 14,
+    },
+    aboutValue: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    divider: {
+        height: 1,
+        marginVertical: 4,
     },
     logoutButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
-        borderRadius: 12,
-        marginBottom: 30,
+        marginTop: 10,
     },
     logoutText: {
         fontWeight: 'bold',
@@ -295,7 +304,7 @@ const styles = StyleSheet.create({
     },
     footer: {
         alignItems: 'center',
-        marginBottom: 40,
+        paddingVertical: 30,
     },
     footerText: {
         fontSize: 12,

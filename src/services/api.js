@@ -2,25 +2,31 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Backend API base URL - Update this to match your backend server
-const BASE_URL = 'https://proglide-backend.vercel.app/api'; // Android emulator
-// For iOS simulator use: http://localhost:5000/api
-// For physical device use: http://YOUR_IP:5000/api
+const BASE_URL = 'https://proglide-backend.vercel.app/api';
+// For local development with Android emulator: http://10.0.2.2:5000/api
+// For iOS simulator: http://localhost:5000/api
+// For physical device: http://YOUR_LOCAL_IP:5000/api
 
-// Create axios instance
+// Create axios instance with extended timeout for slow connections
 const api = axios.create({
     baseURL: BASE_URL,
-    timeout: 10000,
+    timeout: 30000, // 30 seconds timeout for slower connections
     headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
     },
 });
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
     async config => {
-        const token = await AsyncStorage.getItem('userToken');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+        } catch (e) {
+            console.warn('Failed to get auth token:', e);
         }
         return config;
     },
@@ -33,15 +39,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     response => response,
     error => {
-        if (error.response) {
+        if (error.code === 'ECONNABORTED') {
+            // Timeout error
+            console.error('Request Timeout:', error.message);
+            error.userMessage = 'Connection timed out. Please check your internet and try again.';
+        } else if (error.response) {
             // Server responded with error
-            console.error('API Error:', error.response.data);
+            console.error('API Error:', error.response.status, error.response.data);
+            error.userMessage = error.response.data?.message || 'Server error. Please try again.';
         } else if (error.request) {
-            // Request made but no response
+            // Request made but no response (network error)
             console.error('Network Error:', error.message);
+            error.userMessage = 'Unable to connect to server. Please check your internet connection.';
         } else {
             // Something else happened
             console.error('Error:', error.message);
+            error.userMessage = 'An unexpected error occurred. Please try again.';
         }
         return Promise.reject(error);
     },

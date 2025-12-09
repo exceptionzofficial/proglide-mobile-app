@@ -171,23 +171,28 @@ const HomeScreen = ({ navigation }) => {
         </View>
     );
 
-    const renderSuggestions = () => (
-        <View style={[styles.suggestionsContainer, { backgroundColor: colors.card }]}>
-            <FlatList
-                data={suggestions}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        style={[styles.suggestionItem, { borderBottomColor: colors.border }]}
-                        onPress={() => handleSelectDevice(item)}
-                    >
-                        <Icon name="history" size={20} color={colors.textSecondary} style={{ marginRight: 12 }} />
-                        <Text style={{ color: colors.text, fontSize: 16, fontFamily: 'serif' }}>{item}</Text>
-                    </TouchableOpacity>
-                )}
-            />
-        </View>
-    );
+    const renderSuggestions = () => {
+        if (!showSuggestions || suggestions.length === 0) return null;
+
+        return (
+            <View style={[styles.suggestionsContainer, { backgroundColor: colors.card }]}>
+                <FlatList
+                    data={suggestions}
+                    keyExtractor={(item, index) => index.toString()}
+                    keyboardShouldPersistTaps="always"
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={[styles.suggestionItem, { borderBottomColor: colors.border }]}
+                            onPress={() => handleSelectDevice(item)}
+                        >
+                            <Icon name="magnify" size={20} color={colors.textSecondary} style={{ marginRight: 12 }} />
+                            <Text style={{ color: colors.text, fontSize: 16, fontFamily: 'serif' }}>{item}</Text>
+                        </TouchableOpacity>
+                    )}
+                />
+            </View>
+        );
+    };
 
     const renderCategoryBox = (item) => (
         <TouchableOpacity
@@ -319,9 +324,12 @@ const HomeScreen = ({ navigation }) => {
 
         // Device IS selected -> Show Contextual Details
         // Find matching product(s)
+        // Helper to normalize strings (remove spaces, lowercase)
+        const normalize = (str) => str ? str.replace(/\s+/g, '').toLowerCase() : '';
+
         const matchingProduct = products.find(p =>
             p.category === activeTab &&
-            p.compatibleDevices?.toLowerCase().includes(selectedDevice.toLowerCase())
+            p.compatibleDevices?.split(',').some(d => normalize(d) === normalize(selectedDevice))
         );
 
         // Even if no exact match found in this category, we pass a dummy to search for similar/perfect matches
@@ -349,11 +357,11 @@ const HomeScreen = ({ navigation }) => {
 
             {renderHeader()}
 
-            {showSuggestions ? renderSuggestions() : (
-                <View style={styles.contentContainer}>
-                    {renderContent()}
-                </View>
-            )}
+            {renderSuggestions()}
+
+            <View style={styles.contentContainer}>
+                {renderContent()}
+            </View>
         </SafeAreaView>
     );
 };
@@ -361,7 +369,7 @@ const HomeScreen = ({ navigation }) => {
 // Component to render details inside the tab
 const EmbeddedProductDetails = ({ product, targetDevice, theme, onDeviceSelect }) => {
     const { colors } = theme;
-    const [matches, setMatches] = useState({ original: [], fullTemper: [], similar: [], perfect: [] });
+    const [matches, setMatches] = useState({ original: [], fullTemper: [], perfect: [] });
     const [calculating, setCalculating] = useState(true);
 
     useEffect(() => {
@@ -377,71 +385,97 @@ const EmbeddedProductDetails = ({ product, targetDevice, theme, onDeviceSelect }
 
         return () => { isMounted = false; };
     }, [product, targetDevice]);
+    // Helper to normalize strings (remove spaces, lowercase)
+    const normalize = (str) => str ? str.replace(/\s+/g, '').toLowerCase() : '';
+
     const calculateMatches = (allProducts) => {
         const { category, specs } = product;
         const targetHeight = parseFloat(specs?.height || 0);
         const targetWidth = parseFloat(specs?.width || 0);
         const targetRadius = parseFloat(specs?.radiusTopLeft || specs?.radius || 0);
+        const normalizedTarget = normalize(targetDevice);
 
-        const newMatches = { original: [], fullTemper: [], similar: [], perfect: [] };
+        const newMatches = { original: [], fullTemper: [], perfect: [] };
         const categoryProducts = allProducts.filter(p => p.category === category);
 
         if (category === 'Screen Guard') {
-            if (product._id !== 'dummy' && product.compatibleDevices) {
-                // ORIGINAL DRAWING: Only show the device that matches the search (targetDevice)
-                const devices = product.compatibleDevices.split(',').map(d => d.trim());
-                const matchedDevice = devices.find(d => d.toLowerCase() === targetDevice.toLowerCase());
+            // ORIGINAL DRAWING: Find products where the searched device is in compatibleDevices
+            // Then show ALL compatible devices from those products
+            const originalDrawingProducts = categoryProducts.filter(p =>
+                p.compatibleDevices?.split(',').some(d => normalize(d) === normalizedTarget)
+            );
 
-                if (matchedDevice) {
-                    newMatches.original = [matchedDevice];
-                } else if (product.baseModel?.toLowerCase() === targetDevice.toLowerCase()) {
-                    newMatches.original = [product.baseModel];
-                }
-            }
-
-            categoryProducts.forEach(p => {
-                const pHeight = parseFloat(p.specs?.height || 0);
-                const pWidth = parseFloat(p.specs?.width || 0);
-                const pRadius = parseFloat(p.specs?.radiusTopLeft || p.specs?.radius || 0);
-
-                // Full Temper Logic: Height, Width, AND Radius must be same (approx)
-                if (Math.abs(pHeight - targetHeight) < 0.1 &&
-                    Math.abs(pWidth - targetWidth) < 0.1 &&
-                    Math.abs(pRadius - targetRadius) < 0.1) {
-
-                    if (p._id !== product._id && p.compatibleDevices) {
-                        const devices = p.compatibleDevices.split(',').map(d => d.trim());
-                        newMatches.fullTemper.push(...devices);
-                    }
-                }
-
-                // Similar Match Logic: 0.5mm LESS than full temper (target)
-                const widthDiff = targetWidth - pWidth;
-                if (widthDiff >= 0.01 && widthDiff <= 0.5) {
-                    if (Math.abs(pHeight - targetHeight) < 1.0) {
-                        if (p.compatibleDevices) {
-                            const devices = p.compatibleDevices.split(',').map(d => d.trim());
-                            newMatches.similar.push(...devices);
-                        }
-                    }
+            // Collect all compatible devices from products containing the searched device
+            originalDrawingProducts.forEach(p => {
+                if (p.compatibleDevices) {
+                    const devices = p.compatibleDevices.split(',').map(d => d.trim()).filter(d => d);
+                    newMatches.original.push(...devices);
                 }
             });
             // Deduplicate
-            newMatches.fullTemper = [...new Set(newMatches.fullTemper)];
-            newMatches.similar = [...new Set(newMatches.similar)];
+            newMatches.original = [...new Set(newMatches.original)];
+
+            // For Full Temper, use the first matching product's dimensions
+            const targetProd = originalDrawingProducts[0];
+
+            // FULL TEMPER: Find OTHER products with matching dimensions and show their compatible devices
+            // Only run if we found a target product with valid dimensions
+            if (targetProd) {
+                // Handle null/undefined radius by converting to 0
+                const targetH = parseFloat(targetProd.specs?.height) || 0;
+                const targetW = parseFloat(targetProd.specs?.width) || 0;
+                const targetR = parseFloat(targetProd.specs?.radiusTopLeft) || parseFloat(targetProd.specs?.radius) || 0;
+
+
+
+                // Only process Full Temper if we have valid target dimensions (height and width required)
+                if (targetH > 0 && targetW > 0) {
+                    categoryProducts.forEach(p => {
+                        // Skip the same product
+                        if (p._id === targetProd._id) return;
+
+                        // Handle null/undefined radius by converting to 0
+                        const pHeight = parseFloat(p.specs?.height) || 0;
+                        const pWidth = parseFloat(p.specs?.width) || 0;
+                        const pRadius = parseFloat(p.specs?.radiusTopLeft) || parseFloat(p.specs?.radius) || 0;
+
+                        // Skip products with no valid dimensions
+                        if (pHeight <= 0 || pWidth <= 0) return;
+
+                        // Full Temper Logic: Height, Width, AND Radius must match exactly (within 0.1mm tolerance)
+                        const heightMatch = Math.abs(pHeight - targetH) < 0.1;
+                        const widthMatch = Math.abs(pWidth - targetW) < 0.1;
+                        const radiusMatch = Math.abs(pRadius - targetR) < 0.1;
+
+                        if (heightMatch && widthMatch && radiusMatch) {
+
+                            // Add all compatible devices from this matching product
+                            if (p.compatibleDevices) {
+                                const devices = p.compatibleDevices.split(',').map(d => d.trim()).filter(d => d);
+                                newMatches.fullTemper.push(...devices);
+                            }
+                        }
+                    });
+
+                    // Deduplicate Full Temper
+                    newMatches.fullTemper = [...new Set(newMatches.fullTemper)];
+                }
+            }
 
         } else {
-            // Perfect Match Logic for other categories
-            const perfectMatches = categoryProducts.filter(p =>
-                p.compatibleDevices?.toLowerCase().includes(targetDevice.toLowerCase())
+            // OTHER CATEGORIES (Phone Case, CC Board, Battery, Center Panel, Combo Folder)
+            // Find products that contain the searched device and show ALL their compatible devices
+            const matchingProducts = categoryProducts.filter(p =>
+                p.compatibleDevices?.split(',').some(d => normalize(d) === normalizedTarget)
             );
 
-            const allDevices = perfectMatches.flatMap(p =>
-                p.compatibleDevices ? p.compatibleDevices.split(',').map(d => d.trim()) : []
+            // Get all compatible devices from matching products
+            const allDevices = matchingProducts.flatMap(p =>
+                p.compatibleDevices ? p.compatibleDevices.split(',').map(d => d.trim()).filter(d => d) : []
             );
 
-            const matched = allDevices.filter(d => d.toLowerCase() === targetDevice.toLowerCase());
-            newMatches.perfect = [...new Set(matched.length > 0 ? matched : allDevices)];
+            // Deduplicate
+            newMatches.perfect = [...new Set(allDevices)];
         }
         setMatches(newMatches);
     };
@@ -473,7 +507,7 @@ const EmbeddedProductDetails = ({ product, targetDevice, theme, onDeviceSelect }
         );
     }
 
-    const hasAnyMatches = matches.original.length > 0 || matches.fullTemper.length > 0 || matches.similar.length > 0 || matches.perfect.length > 0;
+    const hasAnyMatches = matches.original.length > 0 || matches.fullTemper.length > 0 || matches.perfect.length > 0;
 
     if (!hasAnyMatches) {
         return (
@@ -506,14 +540,6 @@ const EmbeddedProductDetails = ({ product, targetDevice, theme, onDeviceSelect }
                             <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'serif' }]}>Full Temper</Text>
                             <View style={styles.tagContainer}>
                                 {matches.fullTemper.map(d => renderTag(d, '#DCFCE7', '#166534'))}
-                            </View>
-                        </View>
-                    )}
-                    {matches.similar.length > 0 && (
-                        <View style={[styles.section, { backgroundColor: colors.card }]}>
-                            <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'serif' }]}>Similar Match</Text>
-                            <View style={styles.tagContainer}>
-                                {matches.similar.map(d => renderTag(d, '#FEE2E2', '#991B1B'))}
                             </View>
                         </View>
                     )}
