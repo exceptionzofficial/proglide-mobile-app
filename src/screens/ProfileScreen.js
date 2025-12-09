@@ -76,8 +76,6 @@ const ProfileScreen = ({ navigation }) => {
 
             {/* Header Section */}
             <View style={[styles.header, { backgroundColor: colors.primary }]}>
-                <Text style={styles.headerTitle}>Profile</Text>
-
                 <View style={styles.profileInfo}>
                     <View style={styles.avatarContainer}>
                         <Text style={[styles.avatarText, { color: colors.primary }]}>
@@ -168,7 +166,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        paddingTop: 16,
+        paddingTop: 50,
         paddingBottom: 24,
         paddingHorizontal: 20,
     },

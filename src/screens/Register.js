@@ -97,18 +97,66 @@ const Register = ({ navigation }) => {
     }, [fadeAnim, slideAnim, cardAnim, scaleAnim, float1, float2]);
 
     const handleRegister = async () => {
-        if (!name || !email || !phone || !shopName || !password || !confirmPassword) {
-            Alert.alert('Error', 'Please fill in all fields');
+        // Name validation - required, min 2 characters, letters and spaces only
+        const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+        if (!name.trim()) {
+            Alert.alert('Error', 'Full Name is required');
+            return;
+        }
+        if (!nameRegex.test(name.trim())) {
+            Alert.alert('Error', 'Name must contain only letters (2-50 characters)');
             return;
         }
 
-        if (password !== confirmPassword) {
-            Alert.alert('Error', 'Passwords do not match');
+        // Email validation - required, proper email format
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!email.trim()) {
+            Alert.alert('Error', 'Email Address is required');
+            return;
+        }
+        if (!emailRegex.test(email.trim())) {
+            Alert.alert('Error', 'Please enter a valid email address');
             return;
         }
 
+        // Phone validation - required, exactly 10 digits
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phone.trim()) {
+            Alert.alert('Error', 'Phone Number is required');
+            return;
+        }
+        if (!phoneRegex.test(phone.trim())) {
+            Alert.alert('Error', 'Phone number must be exactly 10 digits');
+            return;
+        }
+
+        // Shop name validation - required, min 2 characters
+        if (!shopName.trim()) {
+            Alert.alert('Error', 'Shop Name is required');
+            return;
+        }
+        if (shopName.trim().length < 2) {
+            Alert.alert('Error', 'Shop Name must be at least 2 characters');
+            return;
+        }
+
+        // Password validation - required, min 6 characters
+        if (!password) {
+            Alert.alert('Error', 'Password is required');
+            return;
+        }
         if (password.length < 6) {
             Alert.alert('Error', 'Password must be at least 6 characters long');
+            return;
+        }
+
+        // Confirm password validation
+        if (!confirmPassword) {
+            Alert.alert('Error', 'Please confirm your password');
+            return;
+        }
+        if (password !== confirmPassword) {
+            Alert.alert('Error', 'Passwords do not match');
             return;
         }
 
