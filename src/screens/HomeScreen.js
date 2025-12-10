@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -12,6 +12,7 @@ import {
     ActivityIndicator,
     ScrollView,
     Linking,
+    RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
@@ -77,6 +78,13 @@ const HomeScreen = ({ navigation }) => {
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchProducts();
+        setRefreshing(false);
+    }, []);
 
     useEffect(() => {
         fetchProducts();
@@ -238,7 +246,12 @@ const HomeScreen = ({ navigation }) => {
             }
 
             return (
-                <ScrollView contentContainerStyle={{ padding: 16 }}>
+                <ScrollView
+                    contentContainerStyle={{ padding: 16 }}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+                    }
+                >
                     {/* Show Search Results as Tags in "All" Tab */}
                     {isSearching && displayedDevices.length > 0 && (
                         <View style={[styles.section, { backgroundColor: colors.card }]}>
@@ -347,6 +360,8 @@ const HomeScreen = ({ navigation }) => {
                 targetDevice={selectedDevice}
                 theme={theme}
                 onDeviceSelect={handleSelectDevice}
+                refreshing={refreshing}
+                onRefresh={onRefresh}
             />
         );
     };
@@ -367,7 +382,7 @@ const HomeScreen = ({ navigation }) => {
 };
 
 // Component to render details inside the tab
-const EmbeddedProductDetails = ({ product, targetDevice, theme, onDeviceSelect }) => {
+const EmbeddedProductDetails = ({ product, targetDevice, theme, onDeviceSelect, refreshing, onRefresh }) => {
     const { colors } = theme;
     const [matches, setMatches] = useState({ original: [], fullTemper: [], perfect: [] });
     const [calculating, setCalculating] = useState(true);
@@ -519,7 +534,12 @@ const EmbeddedProductDetails = ({ product, targetDevice, theme, onDeviceSelect }
     }
 
     return (
-        <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <ScrollView
+            contentContainerStyle={{ padding: 16 }}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+            }
+        >
             <View style={[styles.titleCard, { backgroundColor: colors.card }]}>
                 <Text style={[styles.categoryTag, { color: colors.primary, fontFamily: 'serif' }]}>{product.category}</Text>
                 <Text style={[styles.productTitle, { color: colors.text, fontFamily: 'serif' }]}>{targetDevice}</Text>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -8,6 +8,7 @@ import {
     Alert,
     StatusBar,
     SafeAreaView,
+    RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +21,14 @@ const ProfileScreen = ({ navigation }) => {
 
     useEffect(() => {
         loadUser();
+    }, []);
+
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await loadUser();
+        setRefreshing(false);
     }, []);
 
     const loadUser = async () => {
@@ -100,7 +109,13 @@ const ProfileScreen = ({ navigation }) => {
                 )}
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+                }
+            >
                 {/* App Information Section */}
                 <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>APP INFORMATION</Text>
 

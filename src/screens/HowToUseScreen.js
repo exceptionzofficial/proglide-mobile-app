@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,9 @@ import {
     ScrollView,
     TouchableOpacity,
     StatusBar,
+    SafeAreaView,
+    RefreshControl,
+    Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
@@ -13,6 +16,15 @@ import { useTheme } from '../context/ThemeContext';
 const HowToUseScreen = ({ navigation }) => {
     const { theme } = useTheme();
     const { colors } = theme;
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        // Simulate refresh
+        setTimeout(() => {
+            setRefreshing(false);
+        }, 1000);
+    }, []);
 
     const Step = ({ number, title, description, icon }) => (
         <View style={[styles.stepCard, { backgroundColor: colors.card }]}>
@@ -30,7 +42,7 @@ const HowToUseScreen = ({ navigation }) => {
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.primary }]}>
             <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
             {/* Header */}
@@ -42,7 +54,13 @@ const HowToUseScreen = ({ navigation }) => {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={[styles.content, { backgroundColor: colors.background }]}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+                }
+            >
                 <Text style={[styles.intro, { color: colors.text }]}>
                     Welcome to ProGlide! Here's how to find compatible accessories for any device.
                 </Text>
@@ -98,16 +116,17 @@ const HowToUseScreen = ({ navigation }) => {
                     </Text>
                 </View>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     header: {
-        height: 60,
+        height: 56,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',

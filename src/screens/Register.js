@@ -468,7 +468,7 @@ const Register = ({ navigation }) => {
                                 <Text style={styles.footerLink}>Terms of Service</Text>
                             </TouchableOpacity>
                             <Text style={styles.footerText}> & </Text>
-                            <TouchableOpacity>
+                            <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
                                 <Text style={styles.footerLink}>Privacy Policy</Text>
                             </TouchableOpacity>
                         </View>
