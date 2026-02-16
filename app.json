@@ -1,4 +1,8 @@
 {
   "name": "proglide",
-  "displayName": "proglide"
+  "displayName": "proglide",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-3067918720033946~1554675035",
+    "ios_app_id": "ca-app-pub-3067918720033946~1554675035"
+  }
 }

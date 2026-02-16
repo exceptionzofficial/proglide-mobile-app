@@ -14,13 +14,13 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.proglide"
+    namespace "com.jeeva.proglide"
     defaultConfig {
-        applicationId "com.proglide"
+        applicationId "com.jeeva.proglide"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "2.0"
+        versionCode 10
+        versionName "10.0"
     }
     
     // Add your upload key here (generated earlier with keytool)

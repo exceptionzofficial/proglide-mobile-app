@@ -9,21 +9,22 @@ export const lightTheme = {
     colors: {
         background: '#F3F4F6',
         card: '#FFFFFF',
-        text: '#1F2937',
+        text: '#000000',
         textSecondary: '#6B7280',
-        primary: '#9D470A', // Rust Orange
+        primary: '#A04000', // Deep Burnt Orange from reference
         primaryLight: '#FFF7ED',
         border: '#E5E7EB',
         error: '#EF4444',
         success: '#10B981',
         tint: '#FFF7ED',
         icon: '#6B7280',
-        inputBg: '#F9FAFB',
+        inputBg: '#FFFFFF',
         placeholder: '#9CA3AF',
         statusBar: 'light-content',
-        statusBarBg: '#9D470A',
+        statusBarBg: '#A04000',
     },
-    borderRadius: 0, // Sharp corners
+    fontFamily: 'Barlow',
+    borderRadius: 16, // Rounded corners
 };
 
 export const darkTheme = {
@@ -33,19 +34,20 @@ export const darkTheme = {
         card: '#1F2937',
         text: '#F9FAFB',
         textSecondary: '#9CA3AF',
-        primary: '#9D470A', // Rust Orange (Consistent)
-        primaryLight: 'rgba(157, 71, 10, 0.2)',
+        primary: '#A04000', // Deep Burnt Orange
+        primaryLight: 'rgba(160, 64, 0, 0.2)',
         border: '#374151',
         error: '#F87171',
         success: '#34D399',
-        tint: 'rgba(157, 71, 10, 0.2)',
+        tint: 'rgba(160, 64, 0, 0.2)',
         icon: '#9CA3AF',
         inputBg: '#374151',
         placeholder: '#6B7280',
         statusBar: 'light-content',
         statusBarBg: '#1F2937',
     },
-    borderRadius: 0, // Sharp corners
+    fontFamily: 'Barlow',
+    borderRadius: 16, // Rounded corners
 };
 
 export const ThemeProvider = ({ children }) => {

@@ -47,7 +47,7 @@ const TermsScreen = ({ navigation }) => {
                 }
             >
                 <Text style={[styles.lastUpdated, { color: colors.textSecondary }]}>
-                    Last Updated: December 2024
+                    Last Updated: January 2026
                 </Text>
 
                 <View style={styles.section}>
@@ -88,7 +88,21 @@ const TermsScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>5. Contact</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>5. Subscriptions and Payments</Text>
+                    <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                        ProGlide offers Pro and Premium subscription plans. Payments are processed via the Google Play Store. Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. You can manage your subscriptions in your Google Play Store account settings.
+                    </Text>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>6. Advertisements</Text>
+                    <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                        The free version of ProGlide is supported by advertisements provided by Google AdMob. By using the free version, you agree to view these advertisements. Premium subscribers enjoy an ad-free experience.
+                    </Text>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>7. Contact</Text>
                     <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                         For questions about these terms, contact us at:{'\n'}
                         proglideapp@gmail.com
@@ -97,7 +111,7 @@ const TermsScreen = ({ navigation }) => {
 
                 <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-                        © 2024 ProGlide. All rights reserved.
+                        © 2026 ProGlide. All rights reserved.
                     </Text>
                 </View>
             </ScrollView>
@@ -125,6 +139,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 18,
         fontWeight: 'bold',
+        fontFamily: 'Barlow',
     },
     content: {
         flex: 1,
@@ -134,6 +149,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginBottom: 24,
         fontStyle: 'italic',
+        fontFamily: 'Barlow',
     },
     section: {
         marginBottom: 24,
@@ -142,10 +158,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 12,
+        fontFamily: 'Barlow',
     },
     paragraph: {
         fontSize: 14,
         lineHeight: 22,
+        fontFamily: 'Barlow',
     },
     footer: {
         alignItems: 'center',
@@ -153,6 +171,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: 12,
+        fontFamily: 'Barlow',
     },
 });
 

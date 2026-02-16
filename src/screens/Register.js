@@ -18,10 +18,12 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { register } from '../services/api';
+import { useSubscription } from '../context/SubscriptionContext';
 
 const { width, height } = Dimensions.get('window');
 
 const Register = ({ navigation }) => {
+    const { login: loginToRC } = useSubscription();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -176,7 +178,15 @@ const Register = ({ navigation }) => {
 
         setLoading(true);
         try {
-            await register({ name, email, phone, shopName, password });
+            const response = await register({ name, email, phone, shopName, password });
+
+            // Login to RevenueCat with User ID
+            if (response.user && response.user.id) {
+                await loginToRC(response.user.id);
+            } else if (response.user && response.user._id) {
+                await loginToRC(response.user._id);
+            }
+
             Alert.alert('Success', 'Registration successful!', [
                 { text: 'OK', onPress: () => navigation.replace('Home') },
             ]);
@@ -555,11 +565,13 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         marginBottom: 10,
         letterSpacing: 0.5,
+        fontFamily: 'Barlow',
     },
     subtitle: {
         fontSize: 15,
         color: 'rgba(255, 255, 255, 0.5)',
         letterSpacing: 0.3,
+        fontFamily: 'Barlow',
     },
     progressContainer: {
         flexDirection: 'row',
@@ -590,6 +602,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
         textTransform: 'uppercase',
         fontWeight: '600',
+        fontFamily: 'Barlow',
     },
     progressLine: {
         width: 45,
@@ -632,6 +645,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1.5,
         textTransform: 'uppercase',
         marginLeft: 8,
+        fontFamily: 'Barlow',
     },
     inputContainer: {
         marginBottom: 14,
@@ -659,6 +673,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
         fontSize: 15,
         color: '#FFFFFF',
+        fontFamily: 'Barlow',
     },
     eyeIcon: {
         padding: 14,
@@ -673,6 +688,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#666666',
         marginLeft: 6,
+        fontFamily: 'Barlow',
     },
     registerButton: {
         borderRadius: 16,
@@ -697,6 +713,7 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '700',
         letterSpacing: 0.5,
+        fontFamily: 'Barlow',
     },
     loginContainer: {
         flexDirection: 'row',
@@ -707,11 +724,13 @@ const styles = StyleSheet.create({
     loginText: {
         fontSize: 15,
         color: 'rgba(255, 255, 255, 0.5)',
+        fontFamily: 'Barlow',
     },
     loginLink: {
         fontSize: 15,
         fontWeight: '700',
         color: '#CF7E2B',
+        fontFamily: 'Barlow',
     },
     footer: {
         alignItems: 'center',
@@ -721,6 +740,7 @@ const styles = StyleSheet.create({
     footerText: {
         fontSize: 13,
         color: 'rgba(255, 255, 255, 0.35)',
+        fontFamily: 'Barlow',
     },
     footerLinks: {
         flexDirection: 'row',
@@ -730,6 +750,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#CF7E2B',
         fontWeight: '600',
+        fontFamily: 'Barlow',
     },
 });
 

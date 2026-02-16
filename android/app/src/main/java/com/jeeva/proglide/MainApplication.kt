@@ -1,4 +1,4 @@
-package com.proglide
+package com.jeeva.proglide
 
 import android.app.Application
 import com.facebook.react.PackageList

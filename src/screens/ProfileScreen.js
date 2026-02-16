@@ -6,18 +6,21 @@ import {
     TouchableOpacity,
     ScrollView,
     Alert,
-    StatusBar,
-    SafeAreaView,
     RefreshControl,
+    StatusBar,
+    Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { useSubscription } from '../context/SubscriptionContext';
+import ScreenWrapper from '../components/ScreenWrapper';
 
 const ProfileScreen = ({ navigation }) => {
     const [user, setUser] = useState(null);
     const { theme, isDark } = useTheme();
     const { colors } = theme;
+    const { isPro, isPremium } = useSubscription();
 
     useEffect(() => {
         loadUser();
@@ -60,6 +63,10 @@ const ProfileScreen = ({ navigation }) => {
         ]);
     };
 
+    const sendFeedback = () => {
+        Linking.openURL('mailto:proglideapp@gmail.com?subject=App Feedback');
+    };
+
     const MenuItem = ({ icon, title, subtitle, onPress }) => (
         <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card }]}
@@ -77,44 +84,33 @@ const ProfileScreen = ({ navigation }) => {
     );
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            <StatusBar
-                barStyle="light-content"
-                backgroundColor={colors.primary}
-            />
-
+        <ScreenWrapper isScrollable={false} showAd={true} refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }>
             {/* Header Section */}
-            <View style={[styles.header, { backgroundColor: colors.primary }]}>
-                <View style={styles.profileInfo}>
-                    <View style={styles.avatarContainer}>
-                        <Text style={[styles.avatarText, { color: colors.primary }]}>
-                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                        </Text>
-                    </View>
-                    <View style={styles.userInfo}>
-                        <Text style={styles.userName}>{user?.name || 'User Name'}</Text>
-                        <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
-                        <View style={styles.shopBadge}>
-                            <Icon name="store" size={12} color="#FFFFFF" />
-                            <Text style={styles.shopName}>{user?.shopName || 'My Shop'}</Text>
+            <View style={[styles.headerContainer, { backgroundColor: colors.primary }]}>
+                <View style={[styles.headerContent, { paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 50 }]}>
+                    <View style={styles.profileInfo}>
+                        <View style={styles.avatarContainer}>
+                            <Text style={[styles.avatarText, { color: colors.primary }]}>
+                                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                            </Text>
+                        </View>
+                        <View style={styles.userInfo}>
+                            <Text style={styles.userName}>{user?.name || 'User Name'}</Text>
+                            <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
+                            <View style={styles.shopBadge}>
+                                <Icon name="store" size={12} color="#FFFFFF" />
+                                <Text style={styles.shopName}>{user?.shopName || 'My Shop'}</Text>
+                            </View>
                         </View>
                     </View>
                 </View>
-
-                {user?.phone && (
-                    <View style={styles.phoneContainer}>
-                        <Icon name="phone" size={16} color="rgba(255,255,255,0.8)" />
-                        <Text style={styles.phoneText}>{user.phone}</Text>
-                    </View>
-                )}
             </View>
 
             <ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
-                }
             >
                 {/* App Information Section */}
                 <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>APP INFORMATION</Text>
@@ -140,13 +136,31 @@ const ProfileScreen = ({ navigation }) => {
                     onPress={() => navigation.navigate('PrivacyPolicy')}
                 />
 
+                <MenuItem
+                    icon="crown-outline"
+                    title="Subscription"
+                    subtitle={
+                        isPremium ? "Current Plan: Premium" :
+                            isPro ? "Current Plan: Pro" :
+                                "Current Plan: Free"
+                    }
+                    onPress={() => navigation.navigate('Subscription')}
+                />
+
+                <MenuItem
+                    icon="message-draw"
+                    title="Send Feedback"
+                    subtitle="Help us improve the app"
+                    onPress={sendFeedback}
+                />
+
                 {/* About Section */}
                 <Text style={[styles.sectionLabel, { color: colors.textSecondary, marginTop: 20 }]}>ABOUT</Text>
 
                 <View style={[styles.aboutCard, { backgroundColor: colors.card }]}>
                     <View style={styles.aboutRow}>
                         <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>App Version</Text>
-                        <Text style={[styles.aboutValue, { color: colors.text }]}>1.0.0</Text>
+                        <Text style={[styles.aboutValue, { color: colors.text }]}>1.0.1</Text>
                     </View>
                     <View style={[styles.divider, { backgroundColor: colors.background }]} />
                     <View style={styles.aboutRow}>
@@ -172,7 +186,7 @@ const ProfileScreen = ({ navigation }) => {
                     </Text>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </ScreenWrapper>
     );
 };
 
@@ -180,9 +194,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    header: {
-        paddingTop: 50,
-        paddingBottom: 24,
+    headerContainer: {
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+        overflow: 'hidden',
+        paddingBottom: 30,
+    },
+    headerContent: {
         paddingHorizontal: 20,
     },
     headerTitle: {
@@ -190,6 +208,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#FFFFFF',
         marginBottom: 20,
+        fontFamily: 'Barlow',
     },
     profileInfo: {
         flexDirection: 'row',
@@ -202,10 +221,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 16,
+        borderRadius: 35,
     },
     avatarText: {
         fontSize: 28,
         fontWeight: 'bold',
+        fontFamily: 'Barlow',
     },
     userInfo: {
         flex: 1,
@@ -214,11 +235,13 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#FFFFFF',
+        fontFamily: 'Barlow',
     },
     userEmail: {
         fontSize: 14,
         color: 'rgba(255,255,255,0.8)',
         marginBottom: 6,
+        fontFamily: 'Barlow',
     },
     shopBadge: {
         flexDirection: 'row',
@@ -227,12 +250,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 4,
         alignSelf: 'flex-start',
+        borderRadius: 8,
     },
     shopName: {
         color: '#FFFFFF',
         fontSize: 12,
         marginLeft: 4,
         fontWeight: '600',
+        fontFamily: 'Barlow',
     },
     phoneContainer: {
         flexDirection: 'row',
@@ -244,6 +269,7 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.8)',
         fontSize: 14,
         marginLeft: 8,
+        fontFamily: 'Barlow',
     },
     content: {
         flex: 1,
@@ -255,6 +281,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
         marginBottom: 12,
         marginLeft: 4,
+        fontFamily: 'Barlow',
     },
     menuItem: {
         flexDirection: 'row',
@@ -262,6 +289,7 @@ const styles = StyleSheet.create({
         padding: 16,
         marginBottom: 10,
         elevation: 1,
+        borderRadius: 16,
     },
     iconContainer: {
         width: 44,
@@ -269,6 +297,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 14,
+        borderRadius: 12,
     },
     menuTextContainer: {
         flex: 1,
@@ -276,15 +305,18 @@ const styles = StyleSheet.create({
     menuTitle: {
         fontSize: 16,
         fontWeight: '600',
+        fontFamily: 'Barlow',
     },
     menuSubtitle: {
         fontSize: 12,
         marginTop: 2,
+        fontFamily: 'Barlow',
     },
     aboutCard: {
         padding: 16,
         marginBottom: 20,
         elevation: 1,
+        borderRadius: 16,
     },
     aboutRow: {
         flexDirection: 'row',
@@ -294,10 +326,12 @@ const styles = StyleSheet.create({
     },
     aboutLabel: {
         fontSize: 14,
+        fontFamily: 'Barlow',
     },
     aboutValue: {
         fontSize: 14,
         fontWeight: '600',
+        fontFamily: 'Barlow',
     },
     divider: {
         height: 1,
@@ -309,11 +343,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 16,
         marginTop: 10,
+        borderRadius: 16,
     },
     logoutText: {
         fontWeight: 'bold',
         fontSize: 16,
         marginLeft: 8,
+        fontFamily: 'Barlow',
     },
     footer: {
         alignItems: 'center',
@@ -321,6 +357,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: 12,
+        fontFamily: 'Barlow',
     },
 });
 

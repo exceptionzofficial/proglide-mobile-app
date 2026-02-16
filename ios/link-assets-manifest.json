@@ -1,0 +1,13 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/Barlow-Bold.ttf",
+      "sha1": "c1694b01b285276fd14230bfd00c6704d50a49d2"
+    },
+    {
+      "path": "src/assets/fonts/Barlow.ttf",
+      "sha1": "d9301d2a82b5e2a4db2951afb351edf3b1f3f112"
+    }
+  ]
+}

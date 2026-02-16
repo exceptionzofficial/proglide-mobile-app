@@ -7,6 +7,7 @@ import {
     Dimensions,
     StatusBar,
     Easing,
+    Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { isAuthenticated } from '../services/api';
@@ -265,16 +266,11 @@ const SplashScreen = ({ navigation }) => {
 
                 {/* Logo */}
                 <Animated.View style={[styles.logoWrapper, { transform: [{ scale: pulseAnim }] }]}>
-                    <LinearGradient
-                        colors={['#CF7E2B', '#9D470A', '#7A3508']}
-                        style={styles.logoOuter}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                    >
-                        <View style={styles.logoInner}>
-                            <Text style={styles.logoText}>P</Text>
-                        </View>
-                    </LinearGradient>
+                    <Image
+                        source={require('../assets/logo.png')}
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                    />
                 </Animated.View>
             </Animated.View>
 
@@ -308,7 +304,7 @@ const SplashScreen = ({ navigation }) => {
 
             {/* Version */}
             <Animated.View style={[styles.versionContainer, { opacity: glowAnim }]}>
-                <Text style={styles.versionText}>v1.0.0</Text>
+                <Text style={styles.versionText}>v1.0.1</Text>
             </Animated.View>
         </View>
     );
@@ -378,33 +374,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    logoOuter: {
-        width: 150,
-        height: 150,
-        borderRadius: 35,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#CF7E2B',
-        shadowOffset: { width: 0, height: 15 },
-        shadowOpacity: 0.6,
-        shadowRadius: 35,
-        elevation: 25,
-    },
-    logoInner: {
-        width: 115,
-        height: 115,
-        backgroundColor: 'rgba(15, 15, 15, 0.95)',
-        borderRadius: 26,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: 'rgba(207, 126, 43, 0.35)',
-    },
-    logoText: {
-        fontSize: 68,
-        fontWeight: '900',
-        color: '#CF7E2B',
-        letterSpacing: 4,
+    logoImage: {
+        width: 180,
+        height: 180,
+        borderRadius: 20, // Added border radius
     },
     textContainer: {
         alignItems: 'center',
@@ -418,6 +391,7 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(207, 126, 43, 0.4)',
         textShadowOffset: { width: 0, height: 6 },
         textShadowRadius: 20,
+        fontFamily: 'Barlow',
     },
     subtitle: {
         fontSize: 14,
@@ -425,6 +399,7 @@ const styles = StyleSheet.create({
         marginTop: 12,
         letterSpacing: 8,
         fontWeight: '600',
+        fontFamily: 'Barlow',
     },
     progressContainer: {
         position: 'absolute',
@@ -451,15 +426,17 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: 'rgba(255, 255, 255, 0.4)',
         letterSpacing: 1,
+        fontFamily: 'Barlow',
     },
     versionContainer: {
         position: 'absolute',
-        bottom: 40,
+        bottom: 60, // Increased bottom padding
     },
     versionText: {
         fontSize: 12,
         color: 'rgba(255, 255, 255, 0.25)',
         letterSpacing: 2,
+        fontFamily: 'Barlow',
     },
 });
 

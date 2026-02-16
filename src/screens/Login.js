@@ -14,10 +14,12 @@ import {
     Animated,
     Dimensions,
     Easing,
+    Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { login } from '../services/api';
+import { useSubscription } from '../context/SubscriptionContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -113,6 +115,8 @@ const Login = ({ navigation }) => {
         ]).start();
     }, [fadeAnim, slideAnim, cardAnim, scaleAnim, float1, float2, pulseAnim]);
 
+    const { login: loginToRC } = useSubscription();
+
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert('Error', 'Please fill in all fields');
@@ -135,7 +139,15 @@ const Login = ({ navigation }) => {
 
         setLoading(true);
         try {
-            await login(email, password);
+            const response = await login(email, password);
+
+            // Login to RevenueCat with User ID
+            if (response.user && response.user.id) {
+                await loginToRC(response.user.id);
+            } else if (response.user && response.user._id) {
+                await loginToRC(response.user._id);
+            }
+
             navigation.replace('Home');
         } catch (error) {
             console.error('Login error:', error);
@@ -234,17 +246,13 @@ const Login = ({ navigation }) => {
                                 transform: [{ translateY: slideAnim }],
                             },
                         ]}>
+
                         <Animated.View style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}>
-                            <LinearGradient
-                                colors={['#CF7E2B', '#9D470A', '#7A3508']}
-                                style={styles.logoOuter}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                            >
-                                <View style={styles.logoInner}>
-                                    <Text style={styles.logoText}>P</Text>
-                                </View>
-                            </LinearGradient>
+                            <Image
+                                source={require('../assets/logo.png')}
+                                style={styles.logoImage}
+                                resizeMode="contain"
+                            />
                         </Animated.View>
                         <Text style={styles.title}>Welcome Back</Text>
                         <Text style={styles.subtitle}>Sign in to continue to ProGlide</Text>
@@ -343,7 +351,7 @@ const Login = ({ navigation }) => {
                         </View>
 
                         {/* Forgot Password */}
-                        <TouchableOpacity style={styles.forgotPassword}>
+                        <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
                             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                         </TouchableOpacity>
 
@@ -467,6 +475,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 24,
         paddingTop: 60,
+        paddingBottom: 40, // Added padding for botttom navigation
     },
     header: {
         alignItems: 'center',
@@ -475,33 +484,10 @@ const styles = StyleSheet.create({
     logoContainer: {
         marginBottom: 28,
     },
-    logoOuter: {
-        width: 100,
-        height: 100,
-        borderRadius: 25,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#CF7E2B',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.5,
-        shadowRadius: 25,
-        elevation: 20,
-    },
-    logoInner: {
-        width: 75,
-        height: 75,
-        backgroundColor: 'rgba(15, 15, 15, 0.9)',
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: 'rgba(207, 126, 43, 0.3)',
-    },
-    logoText: {
-        fontSize: 40,
-        fontWeight: '900',
-        color: '#CF7E2B',
-        letterSpacing: 2,
+    logoImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 20, // Added border radius
     },
     title: {
         fontSize: 34,
@@ -509,11 +495,13 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         marginBottom: 10,
         letterSpacing: 0.5,
+        fontFamily: 'Barlow',
     },
     subtitle: {
         fontSize: 16,
         color: 'rgba(255, 255, 255, 0.5)',
         letterSpacing: 0.3,
+        fontFamily: 'Barlow',
     },
     formCard: {
         backgroundColor: 'rgba(30, 30, 30, 0.6)',
@@ -558,6 +546,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
         fontSize: 16,
         color: '#FFFFFF',
+        fontFamily: 'Barlow',
     },
     eyeIcon: {
         padding: 16,
@@ -570,6 +559,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#CF7E2B',
+        fontFamily: 'Barlow',
     },
     loginButton: {
         borderRadius: 16,
@@ -594,6 +584,7 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: '700',
         letterSpacing: 0.5,
+        fontFamily: 'Barlow',
     },
     divider: {
         flexDirection: 'row',
@@ -610,6 +601,7 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.3)',
         fontWeight: '700',
         letterSpacing: 2,
+        fontFamily: 'Barlow',
     },
     registerContainer: {
         flexDirection: 'row',
@@ -619,11 +611,13 @@ const styles = StyleSheet.create({
     registerText: {
         fontSize: 15,
         color: 'rgba(255, 255, 255, 0.5)',
+        fontFamily: 'Barlow',
     },
     registerLink: {
         fontSize: 15,
         fontWeight: '700',
         color: '#CF7E2B',
+        fontFamily: 'Barlow',
     },
     footer: {
         alignItems: 'center',
@@ -632,6 +626,7 @@ const styles = StyleSheet.create({
     footerText: {
         fontSize: 13,
         color: 'rgba(255, 255, 255, 0.35)',
+        fontFamily: 'Barlow',
     },
     footerLinks: {
         flexDirection: 'row',
@@ -641,6 +636,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#CF7E2B',
         fontWeight: '600',
+        fontFamily: 'Barlow',
     },
 });
 

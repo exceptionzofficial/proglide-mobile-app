@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
+import ScreenWrapper from '../components/ScreenWrapper';
 
 const HowToUseScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -42,9 +43,9 @@ const HowToUseScreen = ({ navigation }) => {
     );
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.primary }]}>
-            <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
-
+        <ScreenWrapper isScrollable={false} showAd={true} refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }>
             {/* Header */}
             <View style={[styles.header, { backgroundColor: colors.primary }]}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -57,9 +58,6 @@ const HowToUseScreen = ({ navigation }) => {
             <ScrollView
                 style={[styles.content, { backgroundColor: colors.background }]}
                 showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
-                }
             >
                 <Text style={[styles.intro, { color: colors.text }]}>
                     Welcome to ProGlide! Here's how to find compatible accessories for any device.
@@ -116,7 +114,7 @@ const HowToUseScreen = ({ navigation }) => {
                     </Text>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </ScreenWrapper>
     );
 };
 
@@ -126,12 +124,14 @@ const styles = StyleSheet.create({
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     header: {
-        height: 56,
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 10 : 10,
+        paddingBottom: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         elevation: 4,
+        // height: undefined, // Let it grow
     },
     backButton: {
         padding: 8,
@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 18,
         fontWeight: 'bold',
+        fontFamily: 'Barlow',
     },
     content: {
         flex: 1,
@@ -150,6 +151,7 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         marginBottom: 24,
         fontWeight: '500',
+        fontFamily: 'Barlow',
     },
     stepCard: {
         flexDirection: 'row',
@@ -168,6 +170,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: 'bold',
+        fontFamily: 'Barlow',
     },
     stepContent: {
         flex: 1,
@@ -181,10 +184,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 10,
+        fontFamily: 'Barlow',
     },
     stepDescription: {
         fontSize: 14,
         lineHeight: 20,
+        fontFamily: 'Barlow',
     },
     tipCard: {
         flexDirection: 'row',
@@ -200,10 +205,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
         marginBottom: 4,
+        fontFamily: 'Barlow',
     },
     tipText: {
         fontSize: 13,
         lineHeight: 18,
+        fontFamily: 'Barlow',
     },
     footer: {
         alignItems: 'center',
@@ -211,6 +218,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: 12,
+        fontFamily: 'Barlow',
     },
 });
 

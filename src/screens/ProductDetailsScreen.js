@@ -12,6 +12,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../context/ThemeContext';
 import { getProducts } from '../services/api';
+import ScreenWrapper from '../components/ScreenWrapper';
 
 const ProductDetailsScreen = ({ route, navigation }) => {
     const { theme, isDark } = useTheme();
@@ -98,7 +99,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     Math.abs(pWidth - targetWidth) < 0.1 &&
                     Math.abs(pRadius - targetRadius) < 0.1
                 ) {
-                    newMatches.fullTemper.push(p);
+                    if (p.compatibleDevices) {
+                        const devices = p.compatibleDevices.split(',').map(d => d.trim());
+                        newMatches.fullTemper.push({
+                            masterModel: p.specs?.originalDrawingModel || 'Unknown Model',
+                            devices: devices
+                        });
+                    }
                 }
 
                 const widthDiff = targetWidth - pWidth;
@@ -136,7 +143,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     const renderCategoryList = () => (
         <View style={styles.listContainer}>
             <Text style={[styles.sectionTitle, { color: colors.primary, marginLeft: 16, marginTop: 16 }]}>
-                {initialCategory}s
+                {initialCategory}
             </Text>
             {products.length === 0 ? (
                 <View style={styles.emptyContainer}>
@@ -197,11 +204,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 <View>
                     {/* 1. Original Drawing */}
                     <View style={[styles.section, { backgroundColor: colors.card }]}>
-                        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Original Drawing</Text>
+                        <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'Barlow-Bold', fontWeight: 'bold' }]}>
+                            Original Drawing {targetProduct.specs?.originalDrawingModel && `(${targetProduct.specs.originalDrawingModel})`}
+                        </Text>
                         <View style={styles.tagContainer}>
                             {matches.original.length > 0 ? (
                                 matches.original.map((device) =>
-                                    renderTag(device, '#DCFCE7', '#166534')
+                                    renderTag(device, '#F3F4F6', '#000000')
                                 )
                             ) : (
                                 <Text style={{ color: colors.textSecondary }}>No compatible devices listed.</Text>
@@ -212,30 +221,39 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     {/* 2. Full Temper */}
                     {matches.fullTemper.length > 0 && (
                         <View style={[styles.section, { backgroundColor: colors.card }]}>
-                            <Text style={[styles.sectionTitle, { color: colors.primary }]}>Full Temper (Perfect Fit)</Text>
-                            <View style={styles.tagContainer}>
-                                {matches.fullTemper.map((p) =>
-                                    renderTag(
-                                        p.compatibleDevices || 'Unknown',
-                                        '#DCFCE7',
-                                        '#166534',
-                                        () => navigation.push('ProductDetails', { product: p })
-                                    )
-                                )}
-                            </View>
+                            <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'Barlow-Bold', fontWeight: 'bold' }]}>
+                                Full Temper
+                            </Text>
+                            {matches.fullTemper.map((group, index) => (
+                                <View key={index} style={{ marginBottom: 16 }}>
+                                    <Text style={{ color: '#000000', fontFamily: 'Barlow-Bold', fontWeight: 'bold', marginBottom: 8 }}>
+                                        Original Drawing: {group.masterModel}
+                                    </Text>
+                                    <View style={styles.tagContainer}>
+                                        {group.devices.map((device) =>
+                                            renderTag(
+                                                device,
+                                                '#F3F4F6',
+                                                '#000000',
+                                                null
+                                            )
+                                        )}
+                                    </View>
+                                </View>
+                            ))}
                         </View>
                     )}
 
                     {/* 3. Similar Match */}
                     {matches.similar.length > 0 && (
                         <View style={[styles.section, { backgroundColor: colors.card }]}>
-                            <Text style={[styles.sectionTitle, { color: colors.primary }]}>Similar Match (Slightly Smaller)</Text>
+                            <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'Barlow-Bold', fontWeight: 'bold' }]}>Similar Match (Slightly Smaller)</Text>
                             <View style={styles.tagContainer}>
                                 {matches.similar.map((p) =>
                                     renderTag(
                                         p.compatibleDevices || 'Unknown',
-                                        '#FEE2E2',
-                                        '#991B1B',
+                                        '#F3F4F6',
+                                        '#000000',
                                         () => navigation.push('ProductDetails', { product: p })
                                     )
                                 )}
@@ -261,16 +279,32 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     </View>
                 </View>
             ) : (
-                <View style={[styles.section, { backgroundColor: colors.card }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.primary }]}>Compatible Devices (Perfect Match)</Text>
-                    <View style={styles.tagContainer}>
-                        {matches.perfect.length > 0 ? (
-                            matches.perfect.map((device) =>
-                                renderTag(device, isDark ? '#374151' : '#F3F4F6', colors.text)
-                            )
-                        ) : (
-                            <Text style={{ color: colors.textSecondary }}>No compatible devices listed.</Text>
-                        )}
+                <View>
+                    {/* Base Model Display for Phone Case, CC Board, Center Panel */}
+                    {(targetProduct.category === 'Phone Case' || targetProduct.category === 'CC Board' || targetProduct.category === 'Center Panel') && targetProduct.specs?.baseModel && (
+                        <View style={[styles.section, { backgroundColor: colors.card, marginBottom: 16 }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'Barlow-Bold', fontWeight: 'bold' }]}>Base Model</Text>
+                            <View style={[styles.tagContainer, { justifyContent: 'flex-start' }]}>
+                                <View style={[styles.tag, { backgroundColor: '#F3F4F6', borderColor: '#F3F4F6', paddingHorizontal: 20 }]}>
+                                    <Text style={[styles.tagText, { color: '#000000', fontSize: 18, fontFamily: 'Barlow-Bold', fontWeight: 'bold' }]}>
+                                        {targetProduct.specs.baseModel}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                    )}
+
+                    <View style={[styles.section, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.sectionTitle, { color: colors.primary, fontFamily: 'Barlow-Bold', fontWeight: 'bold' }]}>Compatible Devices (Perfect Match)</Text>
+                        <View style={styles.tagContainer}>
+                            {matches.perfect.length > 0 ? (
+                                matches.perfect.map((device) =>
+                                    renderTag(device, '#F3F4F6', '#000000')
+                                )
+                            ) : (
+                                <Text style={{ color: colors.textSecondary }}>No compatible devices listed.</Text>
+                            )}
+                        </View>
                     </View>
                 </View>
             )}
@@ -278,9 +312,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <StatusBar barStyle="light-content" backgroundColor={colors.statusBarBg} />
-
+        <ScreenWrapper isScrollable={false} showAd={true}>
             {/* Header */}
             <View style={[styles.header, { backgroundColor: colors.primary }]}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -299,7 +331,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             ) : (
                 isCategoryMode ? renderCategoryList() : renderDetailsView()
             )}
-        </View>
+        </ScreenWrapper>
     );
 };
 
@@ -308,12 +340,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        height: 60,
+        paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 50,
+        paddingBottom: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         elevation: 4,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
     },
     backButton: {
         padding: 8,
@@ -322,6 +357,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 18,
         fontWeight: 'bold',
+        fontFamily: 'Barlow',
     },
     loadingContainer: {
         flex: 1,
@@ -342,7 +378,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     titleCard: {
-        borderRadius: 0, // Sharp corners
+        borderRadius: 16,
         padding: 24,
         alignItems: 'center',
         marginBottom: 20,
@@ -362,18 +398,21 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 1,
         marginBottom: 8,
+        fontFamily: 'Barlow',
     },
     productTitle: {
         fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 8,
+        fontFamily: 'Barlow',
     },
     productId: {
         fontSize: 14,
+        fontFamily: 'Barlow',
     },
     section: {
-        borderRadius: 0, // Sharp corners
+        borderRadius: 16,
         padding: 16,
         marginBottom: 16,
         elevation: 1,
@@ -382,6 +421,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 12,
+        fontFamily: 'Barlow',
     },
     tagContainer: {
         flexDirection: 'row',
@@ -390,21 +430,22 @@ const styles = StyleSheet.create({
     tag: {
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 0, // Sharp corners
+        borderRadius: 12,
         marginRight: 8,
         marginBottom: 8,
         borderWidth: 1,
     },
     tagText: {
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: 'bold',
+        fontFamily: 'Barlow-Bold',
     },
     row: {
         flexDirection: 'row',
         marginBottom: 8,
     },
     productCard: {
-        borderRadius: 0,
+        borderRadius: 16,
         padding: 16,
         marginBottom: 12,
         elevation: 1,
@@ -421,9 +462,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 4,
+        fontFamily: 'Barlow-Bold',
     },
     cardSubtitle: {
         fontSize: 14,
+        fontFamily: 'Barlow',
     },
 });
 

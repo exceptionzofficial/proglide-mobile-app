@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Backend API base URL - Update this to match your backend server
 const BASE_URL = 'https://proglide-backend.vercel.app/api';
-// For local development with Android emulator: http://10.0.2.2:5000/api
+// For local development with Android emulator:
+// const BASE_URL = 'http://10.0.2.2:5000/api';
 // For iOS simulator: http://localhost:5000/api
 // For physical device: http://YOUR_LOCAL_IP:5000/api
 
@@ -113,6 +114,33 @@ export const isAuthenticated = async () => {
         return !!token;
     } catch (error) {
         return false;
+    }
+};
+
+export const forgotPassword = async (email) => {
+    try {
+        const response = await api.post('/auth/forgot-password', { email });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const verifyOtp = async (email, otp) => {
+    try {
+        const response = await api.post('/auth/verify-otp', { email, otp });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const resetPassword = async (email, newPassword) => {
+    try {
+        const response = await api.post('/auth/reset-password', { email, newPassword });
+        return response.data;
+    } catch (error) {
+        throw error;
     }
 };
 

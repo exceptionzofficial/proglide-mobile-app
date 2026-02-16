@@ -47,7 +47,7 @@ const PrivacyPolicyScreen = ({ navigation }) => {
                 }
             >
                 <Text style={[styles.lastUpdated, { color: colors.textSecondary }]}>
-                    Last Updated: December 2024
+                    Last Updated: January 2026
                 </Text>
 
                 <View style={styles.section}>
@@ -68,20 +68,36 @@ const PrivacyPolicyScreen = ({ navigation }) => {
                         We use your information to:{'\n\n'}
                         • Create and manage your account{'\n'}
                         • Provide product compatibility search services{'\n'}
+                        • Process subscription payments (via third-party providers){'\n'}
+                        • Display relevant advertisements (via Google AdMob){'\n'}
                         • Send important updates about the app{'\n'}
                         • Improve our services based on usage patterns
                     </Text>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>3. Data Security</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>3. Advertisements</Text>
+                    <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                        We use Google AdMob to display advertisements in the free version of our app. AdMob may collect and use your device's advertising ID and other data to serve personalized ads. You can manage your ad preferences in your device settings.
+                    </Text>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>4. Payments</Text>
+                    <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                        We use Google Play Billing and RevenueCat for processing subscription payments. We do not store your credit card or payment information on our servers. All financial transactions are handled securely by Google.
+                    </Text>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>5. Data Security</Text>
                     <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                         Your data is securely stored and protected. We use industry-standard encryption to protect your personal information. We do not sell or share your data with third parties.
                     </Text>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>4. Your Rights</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>6. Your Rights</Text>
                     <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                         You have the right to:{'\n\n'}
                         • Access your personal data{'\n'}
@@ -93,7 +109,7 @@ const PrivacyPolicyScreen = ({ navigation }) => {
 
                 <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-                        © 2024 ProGlide. All rights reserved.
+                        © 2026 ProGlide. All rights reserved.
                     </Text>
                 </View>
             </ScrollView>
@@ -121,6 +137,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 18,
         fontWeight: 'bold',
+        fontFamily: 'Barlow',
     },
     content: {
         flex: 1,
@@ -130,6 +147,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginBottom: 24,
         fontStyle: 'italic',
+        fontFamily: 'Barlow',
     },
     section: {
         marginBottom: 24,
@@ -138,10 +156,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 12,
+        fontFamily: 'Barlow',
     },
     paragraph: {
         fontSize: 14,
         lineHeight: 22,
+        fontFamily: 'Barlow',
     },
     footer: {
         alignItems: 'center',
@@ -149,6 +169,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: 12,
+        fontFamily: 'Barlow',
     },
 });
 

@@ -3,18 +3,23 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 
 // Import Screens
 import SplashScreen from '../screens/SplashScreen';
 import Login from '../screens/Login';
 import Register from '../screens/Register';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ProductDetailsScreen from '../screens/ProductDetailsScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import TermsScreen from '../screens/TermsScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import HowToUseScreen from '../screens/HowToUseScreen';
+import PaywallScreen from '../screens/PaywallScreen';
+import SubscriptionScreen from '../screens/SubscriptionScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -23,6 +28,7 @@ const Tab = createBottomTabNavigator();
 const MainTabNavigator = () => {
     const { theme, isDark } = useTheme();
     const { colors } = theme;
+    const insets = useSafeAreaInsets();
 
     return (
         <Tab.Navigator
@@ -34,8 +40,8 @@ const MainTabNavigator = () => {
                     backgroundColor: isDark ? colors.card : '#FFFFFF',
                     borderTopWidth: 0,
                     elevation: 15,
-                    height: 65,
-                    paddingBottom: 10,
+                    height: 65 + insets.bottom, // Add safe area bottom inset
+                    paddingBottom: 10 + insets.bottom, // Adjust padding for content
                     paddingTop: 10,
                     borderTopColor: isDark ? colors.border : 'transparent',
                     shadowColor: '#000',
@@ -124,6 +130,13 @@ const Navigator = () => {
 
                 {/* Main App Flow (Tabs) */}
                 <Stack.Screen
+                    name="ForgotPassword"
+                    component={ForgotPasswordScreen}
+                    options={{
+                        animation: 'slide_from_right',
+                    }}
+                />
+                <Stack.Screen
                     name="Home"
                     component={MainTabNavigator}
                     options={{
@@ -159,10 +172,34 @@ const Navigator = () => {
                     }}
                 />
                 <Stack.Screen
+                    name="Notifications"
+                    component={NotificationsScreen}
+                    options={{
+                        animation: 'slide_from_right',
+                    }}
+                />
+                <Stack.Screen
                     name="HowToUse"
                     component={HowToUseScreen}
                     options={{
                         animation: 'slide_from_right',
+                    }}
+                />
+
+                {/* Subscription Screens */}
+                <Stack.Screen
+                    name="Subscription"
+                    component={SubscriptionScreen}
+                    options={{
+                        animation: 'slide_from_right',
+                    }}
+                />
+                <Stack.Screen
+                    name="Paywall"
+                    component={PaywallScreen}
+                    options={{
+                        animation: 'slide_from_bottom',
+                        presentation: 'modal',
                     }}
                 />
             </Stack.Navigator>
